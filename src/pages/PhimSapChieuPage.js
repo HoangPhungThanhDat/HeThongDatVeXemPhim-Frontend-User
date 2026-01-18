@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import MovieApi from "../api/MovieApi";
 
-const PhimDangChieuPage = () => {
+const PhimSapChieuPage = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -9,13 +9,13 @@ const PhimDangChieuPage = () => {
   const [selectedTrailer, setSelectedTrailer] = useState("");
 
   useEffect(() => {
-    fetchNowShowingMovies();
+    fetchComingSoonMovies();
   }, []);
 
-  const fetchNowShowingMovies = async () => {
+  const fetchComingSoonMovies = async () => {
     try {
       setLoading(true);
-      const result = await MovieApi.getNowShowing();
+      const result = await MovieApi.getComingSoonMovies(20); // Lấy 20 phim sắp chiếu
       
       if (result.success) {
         setMovies(result.data);
@@ -35,7 +35,7 @@ const PhimDangChieuPage = () => {
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return "";
     
-    console.log("Original trailer URL:", url); // Debug
+    console.log("Original trailer URL:", url);
     
     // Nếu là YouTube ID thuần (11 ký tự)
     if (!url.includes("http") && url.length === 11) {
@@ -65,7 +65,7 @@ const PhimDangChieuPage = () => {
     }
     
     const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` : "";
-    console.log("Embed URL:", embedUrl); // Debug
+    console.log("Embed URL:", embedUrl);
     
     return embedUrl;
   };
@@ -74,16 +74,15 @@ const PhimDangChieuPage = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log("Play trailer clicked:", trailerUrl); // Debug
+    console.log("Play trailer clicked:", trailerUrl);
     
     const embedUrl = getYouTubeEmbedUrl(trailerUrl);
     
     if (embedUrl) {
       setSelectedTrailer(embedUrl);
       setShowModal(true);
-      // Ngăn scroll khi modal mở
       document.body.style.overflow = 'hidden';
-      console.log("Modal should open now"); // Debug
+      console.log("Modal should open now");
     } else {
       console.error("Invalid trailer URL:", trailerUrl);
       alert("Không thể phát trailer. URL không hợp lệ.");
@@ -93,7 +92,6 @@ const PhimDangChieuPage = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedTrailer("");
-    // Cho phép scroll lại
     document.body.style.overflow = 'auto';
   };
 
@@ -108,6 +106,17 @@ const PhimDangChieuPage = () => {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [showModal]);
+
+  // Format ngày tháng
+  const formatDate = (dateString) => {
+    if (!dateString) return "Chưa xác định";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+  };
 
   const renderMovieCard = (movie) => {
     // Xử lý tên field có thể khác nhau từ API
@@ -130,6 +139,20 @@ const PhimDangChieuPage = () => {
                   e.target.src = "https://via.placeholder.com/300x450?text=No+Image";
                 }}
               />
+              {/* Badge Sắp Chiếu */}
+              <div style={{
+                position: 'absolute',
+                top: '10px',
+                left: '10px',
+                backgroundColor: '#ff9800',
+                color: 'white',
+                padding: '5px 10px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>
+                SẮP CHIẾU
+              </div>
             </div>
             <a href={`/film/${movieId}`}>
               <h4 className="entry-title">{movie.Title}</h4>
@@ -147,6 +170,14 @@ const PhimDangChieuPage = () => {
             
             <div className="movie-char-info-left">
               <p style={{ fontStyle: 'italic' }}>{movie.Genre || "Chưa phân loại"}</p>
+            </div>
+            
+            {/* Ngày khởi chiếu */}
+            <div className="entry-time" style={{ marginBottom: '10px' }}>
+              <i className="fa fa-calendar"></i>
+              <span style={{ marginLeft: '5px', fontWeight: 'bold', color: '#ff9800' }}>
+                Khởi chiếu: {formatDate(movie.ReleaseDate)}
+              </span>
             </div>
             
             <div className="entry-time">
@@ -168,7 +199,7 @@ const PhimDangChieuPage = () => {
                 </a>
               )}
               <a href={`/film/${movieId}`}>
-                <i aria-hidden="true" className="fa fa-ticket"></i>Đặt vé
+                <i aria-hidden="true" className="fa fa-info-circle"></i>Chi tiết
               </a>
             </div>
             
@@ -203,7 +234,7 @@ const PhimDangChieuPage = () => {
 
   return (
     <div>
-       <section
+      <section
       className="filmoja-login-area section_70 bg-main"
       style={{
         background: "#e6e7e9",
@@ -224,7 +255,7 @@ const PhimDangChieuPage = () => {
                   fontSize: '18px'
                 }}>
                   <i className="fa fa-spinner fa-spin" style={{ marginRight: '10px' }}></i>
-                  Đang tải danh sách phim...
+                  Đang tải danh sách phim sắp chiếu...
                 </div>
               )}
 
@@ -240,7 +271,7 @@ const PhimDangChieuPage = () => {
                   {error}
                   <br />
                   <button 
-                    onClick={fetchNowShowingMovies}
+                    onClick={fetchComingSoonMovies}
                     style={{
                       marginTop: '20px',
                       padding: '10px 20px',
@@ -265,7 +296,7 @@ const PhimDangChieuPage = () => {
                   fontSize: '18px'
                 }}>
                   <i className="fa fa-film" style={{ marginRight: '10px' }}></i>
-                  Hiện tại chưa có phim đang chiếu
+                  Hiện tại chưa có phim sắp chiếu
                 </div>
               )}
 
@@ -280,7 +311,7 @@ const PhimDangChieuPage = () => {
         </div>
       </section>
 
-      {/* Modal Trailer YouTube - Giống PhimMoi */}
+      {/* Modal Trailer YouTube */}
       {showModal && (
         <div 
           className="trailer-modal-overlay"
@@ -408,4 +439,4 @@ const PhimDangChieuPage = () => {
   );
 };
 
-export default PhimDangChieuPage;
+export default PhimSapChieuPage;

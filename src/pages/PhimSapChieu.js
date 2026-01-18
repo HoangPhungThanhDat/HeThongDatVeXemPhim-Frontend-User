@@ -1,21 +1,152 @@
 import React, { useState, useEffect } from "react";
+import MovieApi from "../api/MovieApi";
 
-function PhimDangChieu() {
+function PhimSapChieu() {
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTrailer, setSelectedTrailer] = useState("");
+
   useEffect(() => {
-    $(".top-movie-slider").owlCarousel({
-      loop: true,
-      margin: 10,
-      nav: true, // có mũi tên điều hướng
-      dots: false, // tắt chấm tròn
-      autoplay: true,
-      autoplayTimeout: 3000,
-      responsive: {
-        0: { items: 1 },
-        600: { items: 3 },
-        1000: { items: 5 },
-      },
-    });
-  }, []); // chạy 1 lần sau khi render
+    fetchComingSoonMovies();
+  }, []);
+
+  const fetchComingSoonMovies = async () => {
+    try {
+      setLoading(true);
+      const result = await MovieApi.getComingSoonMovies(10);
+      
+      if (result.success) {
+        setMovies(result.data);
+      } else {
+        console.error("Lỗi khi lấy phim sắp chiếu:", result.message);
+      }
+    } catch (error) {
+      console.error("Lỗi:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (movies.length > 0 && window.$) {
+      const $carousel = window.$(".top-movie-slider");
+      if ($carousel.hasClass("owl-loaded")) {
+        $carousel.trigger("destroy.owl.carousel");
+        $carousel.removeClass("owl-loaded");
+      }
+
+      setTimeout(() => {
+        $carousel.owlCarousel({
+          loop: true,
+          margin: 10,
+          nav: true,
+          dots: false,
+          autoplay: true,
+          autoplayTimeout: 3000,
+          responsive: {
+            0: { items: 1 },
+            600: { items: 3 },
+            1000: { items: 5 },
+          },
+        });
+      }, 100);
+    }
+  }, [movies]);
+
+  // Chuyển đổi URL YouTube thành embed URL
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url) return "";
+    
+    // Nếu là YouTube ID thuần
+    if (!url.includes("http")) {
+      return `https://www.youtube.com/embed/${url}?autoplay=1`;
+    }
+    
+    // Xử lý các dạng URL YouTube khác
+    let videoId = "";
+    
+    if (url.includes("youtube.com/watch?v=")) {
+      videoId = url.split("v=")[1]?.split("&")[0];
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1]?.split("?")[0];
+    } else if (url.includes("youtube.com/embed/")) {
+      videoId = url.split("embed/")[1]?.split("?")[0];
+    }
+    
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : "";
+  };
+
+  // Mở modal với trailer
+  const handlePlayTrailer = (e, trailerUrl) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const embedUrl = getYouTubeEmbedUrl(trailerUrl);
+    if (embedUrl) {
+      setSelectedTrailer(embedUrl);
+      setShowModal(true);
+      // Ngăn scroll khi modal mở
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  // Đóng modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedTrailer("");
+    // Cho phép scroll lại
+    document.body.style.overflow = 'auto';
+  };
+
+  if (loading) {
+    return (
+      <section className="filmoja-top-movies-area section_30">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="filmoja-heading">
+                <h2>
+                  Phim:<span> Sắp chiếu</span>
+                </h2>
+              </div>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-md-12 text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="sr-only">Đang tải...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!movies || movies.length === 0) {
+    return (
+      <section className="filmoja-top-movies-area section_30">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="filmoja-heading">
+                <h2>
+                  Phim:<span> Sắp chiếu</span>
+                </h2>
+              </div>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-md-12 text-center py-5">
+              <p className="text-muted">Chưa có phim sắp chiếu</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div>
       <section className="filmoja-top-movies-area section_30">
@@ -32,237 +163,182 @@ function PhimDangChieu() {
           <div className="row">
             <div className="col-md-12">
               <div className="top-movie-slider owl-carousel">
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/bebefinn-lt-lac-vao-xu-so-pinkfong-dieu-ky-p/bf7c52c5-86fb-4796-a4c1-bce28e543ae3.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Lac-vao-xu-so-Pinkfong.jpg"
-                          alt="bebefinn-lt-lac-vao-xu-so-pinkfong-dieu-ky-p"
-                        />
-                      </a>
+                {movies.map((movie) => (
+                  <div className="single-top-movie" key={movie.MovieId}>
+                    <div className="top-movie-wrap">
+                      <div className="top-movie-img">
+                        <a href={`/movie/${movie.MovieId}`}>
+                          <img
+                            src={movie.PosterUrl || "/default-poster.jpg"}
+                            alt={movie.Title}
+                            onError={(e) => {
+                              e.target.src = "/default-poster.jpg";
+                            }}
+                          />
+                        </a>
+                      </div>
+                      <div className="thumb-hover">
+                        {movie.TrailerUrl && (
+                          <a
+                            className="play-video"
+                            href="#"
+                            onClick={(e) => handlePlayTrailer(e, movie.TrailerUrl)}
+                          >
+                            <i className="fa fa-play"></i>
+                          </a>
+                        )}
+                        <div className="thumb-date">
+                          {movie.ReleaseDate && (
+                            <span>
+                              {new Date(movie.ReleaseDate).toLocaleDateString(
+                                "vi-VN"
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=H43myspCWxI"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
-                    </div>
-                  </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/bebefinn-lt-lac-vao-xu-so-pinkfong-dieu-ky-p/bf7c52c5-86fb-4796-a4c1-bce28e543ae3.html">
-                        BEBEFINN (LT): LẠC V&#192;O XỨ SỞ PINKFONG DIỆU KỲ (P)
-                      </a>
-                    </h4>
-                  </div>
-                </div>
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/em-xinh-tinh-quai-pd-t13/658f8077-4f17-4b2d-a7e9-71ecc47a5121.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Em-xinh-tinh-quai.jpg"
-                          alt="em-xinh-tinh-quai-pd-t13"
-                        />
-                      </a>
-                    </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=qKyKnhb9E9w"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
+                    <div className="top-movie-details">
+                      <h4>
+                        <a href={`/movie/${movie.MovieId}`}>{movie.Title}</a>
+                      </h4>
+                      {movie.Rated && (
+                        <span className="movie-rated">({movie.Rated})</span>
+                      )}
                     </div>
                   </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/em-xinh-tinh-quai-pd-t13/658f8077-4f17-4b2d-a7e9-71ecc47a5121.html">
-                        EM XINH TINH QU&#193;I (PD) (T13)
-                      </a>
-                    </h4>
-                  </div>
-                </div>
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/em-xinh-tinh-quai-lt-t13/d890049a-38df-4c6a-bb1e-200776f32ea0.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Em-xinh-tinh-quai.jpg"
-                          alt="em-xinh-tinh-quai-lt-t13"
-                        />
-                      </a>
-                    </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=qKyKnhb9E9w"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
-                    </div>
-                  </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/em-xinh-tinh-quai-lt-t13/d890049a-38df-4c6a-bb1e-200776f32ea0.html">
-                        EM XINH TINH QU&#193;I (LT) (T13)
-                      </a>
-                    </h4>
-                  </div>
-                </div>
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/pha-dam-sinh-nhat-me/084aaa40-357e-4a8d-b000-b147a4a1371e.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Pha-dam-sinh-nhat-me.jpg"
-                          alt="pha-dam-sinh-nhat-me"
-                        />
-                      </a>
-                    </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=49jApA-qvpE"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
-                    </div>
-                  </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/pha-dam-sinh-nhat-me/084aaa40-357e-4a8d-b000-b147a4a1371e.html">
-                        PH&#193; Đ&#193;M SINH NHẬT MẸ
-                      </a>
-                    </h4>
-                  </div>
-                </div>
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/the-conjuring-nghi-le-cuoi-cung/ef0276af-808a-4982-be37-6f81ec1d27a1.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/The-conjuring-Nghi-le-cuoi-cung.jpg"
-                          alt="the-conjuring-nghi-le-cuoi-cung"
-                        />
-                      </a>
-                    </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=sbsNPOzdBg0"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
-                    </div>
-                  </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/the-conjuring-nghi-le-cuoi-cung/ef0276af-808a-4982-be37-6f81ec1d27a1.html">
-                        THE CONJURING: NGHI LỄ CUỐI C&#217;NG
-                      </a>
-                    </h4>
-                  </div>
-                </div>
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/khe-uoc-ban-dau/2941d117-a1dd-4a1e-8afd-0591f7833c90.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Khe-uoc-ban-dau.jpg"
-                          alt="khe-uoc-ban-dau"
-                        />
-                      </a>
-                    </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=fIRCSWunw-8"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
-                    </div>
-                  </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/khe-uoc-ban-dau/2941d117-a1dd-4a1e-8afd-0591f7833c90.html">
-                        KHẾ ƯỚC B&#193;N D&#194;U
-                      </a>
-                    </h4>
-                  </div>
-                </div>
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/tram-dam-tu-than-t18/299e0984-8894-46d6-86cf-25089fb71bcf.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Tram-dam-tu-than.jpg"
-                          alt="tram-dam-tu-than-t18"
-                        />
-                      </a>
-                    </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=j_FghUMcBP0"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
-                    </div>
-                  </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/tram-dam-tu-than-t18/299e0984-8894-46d6-86cf-25089fb71bcf.html">
-                        TRĂM DẶM TỬ THẦN (T18)
-                      </a>
-                    </h4>
-                  </div>
-                </div>
-                <div className="single-top-movie">
-                  <div className="top-movie-wrap">
-                    <div className="top-movie-img">
-                      <a href="/film/tu-chien-tren-khong/09072faf-ff45-4939-8452-d19135ded86d.html">
-                        <img
-                          src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Tu-chien-tren-khong.jpg"
-                          alt="tu-chien-tren-khong"
-                        />
-                      </a>
-                    </div>
-                    <div className="thumb-hover">
-                      <a
-                        className="play-video"
-                        href="https://www.youtube.com/watch?v=https://www.youtube.com/watch?v=Q-Zf8KhyS6E"
-                      >
-                        <i className="fa fa-play"></i>
-                      </a>
-                      <div className="thumb-date"></div>
-                    </div>
-                  </div>
-                  <div className="top-movie-details">
-                    <h4>
-                      <a href="/film/tu-chien-tren-khong/09072faf-ff45-4939-8452-d19135ded86d.html">
-                        TỬ CHIẾN TR&#202;N KH&#212;NG
-                      </a>
-                    </h4>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Modal Trailer YouTube */}
+      {showModal && (
+        <div 
+          className="trailer-modal-overlay"
+          onClick={handleCloseModal}
+        >
+          <div className="trailer-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="trailer-modal-close"
+              onClick={handleCloseModal}
+            >
+              <i className="fa fa-times"></i>
+            </button>
+            <div className="trailer-video-wrapper">
+              <iframe
+                src={selectedTrailer}
+                title="Movie Trailer"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        .trailer-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .trailer-modal-content {
+          position: relative;
+          width: 90%;
+          max-width: 1200px;
+          animation: slideUp 0.3s ease-in-out;
+        }
+
+        @keyframes slideUp {
+          from {
+            transform: translateY(50px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .trailer-modal-close {
+          position: absolute;
+          top: -40px;
+          right: 0;
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 30px;
+          cursor: pointer;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          z-index: 10000;
+        }
+
+        .trailer-modal-close:hover {
+          color: #ff0000;
+          transform: rotate(90deg);
+        }
+
+        .trailer-video-wrapper {
+          position: relative;
+          padding-bottom: 56.25%; /* 16:9 aspect ratio */
+          height: 0;
+          overflow: hidden;
+          background: #000;
+          border-radius: 8px;
+        }
+
+        .trailer-video-wrapper iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .trailer-modal-content {
+            width: 95%;
+          }
+
+          .trailer-modal-close {
+            top: -35px;
+            font-size: 25px;
+            width: 35px;
+            height: 35px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
-export default PhimDangChieu;
+export default PhimSapChieu;

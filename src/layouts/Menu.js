@@ -4,6 +4,96 @@ import bannergau from "../assets/images/bannergau21.png";
 import "../assets/css/Style.css";
 
 function Menu() {
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [fullname, setFullname] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Kiểm tra trạng thái đăng nhập khi component mount
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+  const checkLoginStatus = () => {
+    const token = localStorage.getItem("token");
+    const name = localStorage.getItem("fullname");
+    
+    if (token) {
+      setIsLoggedIn(true);
+      setFullname(name || "User");
+    } else {
+      setIsLoggedIn(false);
+    }
+  };
+
+  const logOut = () => {
+    // Xóa toàn bộ thông tin đăng nhập
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("fullname");
+    localStorage.removeItem("UserId");
+    localStorage.removeItem("access_token");
+    
+    // Cập nhật state
+    setIsLoggedIn(false);
+    setFullname("");
+    setShowDropdown(false);
+    
+    // Chuyển về trang chủ và reload
+    navigate("/");
+    window.location.reload();
+  };
+
+
+  // Menu logic
+    useEffect(() => {
+      const toggle = document.getElementById("navbar-toggle");
+      const menu = document.getElementById("navbar-menu");
+      const overlay = document.getElementById("overlay");
+      const dropdowns = document.querySelectorAll(".dropdown");
+  
+      const handleToggleClick = () => {
+        menu?.classList.toggle("active");
+        overlay?.classList.toggle("active");
+      };
+  
+      const handleOverlayClick = () => {
+        menu?.classList.remove("active");
+        overlay?.classList.remove("active");
+      };
+  
+      const handleDropdownClick = (e) => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          e.currentTarget.classList.toggle("open");
+        }
+      };
+  
+      if (toggle) {
+        toggle.addEventListener("click", handleToggleClick);
+      }
+  
+      if (overlay) {
+        overlay.addEventListener("click", handleOverlayClick);
+      }
+  
+      dropdowns.forEach((dropdown) => {
+        dropdown.addEventListener("click", handleDropdownClick);
+      });
+  
+      // Cleanup
+      return () => {
+        if (toggle) {
+          toggle.removeEventListener("click", handleToggleClick);
+        }
+        if (overlay) {
+          overlay.removeEventListener("click", handleOverlayClick);
+        }
+        dropdowns.forEach((dropdown) => {
+          dropdown.removeEventListener("click", handleDropdownClick);
+        });
+      };
+    }, []);
   return (
     <div>
       <header className="filmoja-header-area">
@@ -49,30 +139,52 @@ function Menu() {
                     <li>
                       <a href="/cau-hoi-thuong-gap.html">FAQ's</a>
                     </li>
-                    <li className="btn-member">
-                      <Link to="/dang-nhap">
-                        <i
-                          className="fa fa-sign-in-alt"
-                          style={{ marginRight: "5px" }}
-                        ></i>
-                        Đăng Nhập
-                      </Link>
-                    </li>
-                    <li className="btn-member">
-                      <Link to="/dang-ky">
-                        <i
-                          className="fa fa-user-plus"
-                          style={{ marginRight: "5px" }}
-                        ></i>
-                        Đăng ký
-                      </Link>
-                    </li>
 
-                    {/* <li>
-                      <button onClick={logOut} className="btn-member">
-                        Đăng xuất
-                      </button>
-                    </li> */}
+                    {/* Hiển thị menu dựa trên trạng thái đăng nhập */}
+                    {isLoggedIn ? (
+                      <>
+                        <li 
+                          className="user-dropdown-container"
+                          onMouseEnter={() => setShowDropdown(true)}
+                          onMouseLeave={() => setShowDropdown(false)}
+                        >
+                          <a href="#" className="btn-member user-name">
+                            <i className="fa fa-user" style={{ marginRight: "5px" }}></i>
+                            {fullname}
+                            <i className="fa fa-chevron-down" style={{ marginLeft: "5px", fontSize: "10px" }}></i>
+                          </a>
+                          
+                          {showDropdown && (
+                            <div className="user-dropdown-menu">
+                              <Link to="/thong-tin-ca-nhan" className="dropdown-item">
+                                <i className="fa fa-user-circle"></i>
+                                Thông Tin
+                              </Link>
+                              <div className="dropdown-divider"></div>
+                              <a href="#" onClick={(e) => { e.preventDefault(); logOut(); }} className="dropdown-item logout-item">
+                                <i className="fa fa-sign-out"></i>
+                                Đăng Xuất
+                              </a>
+                            </div>
+                          )}
+                        </li>
+                      </>
+                    ) : (
+                      <>
+                        <li className="btn-member">
+                          <Link to="/dang-nhap">
+                            <i className="fa fa-sign-in-alt" style={{ marginRight: "5px" }}></i>
+                            Đăng Nhập
+                          </Link>
+                        </li>
+                        <li className="btn-member">
+                          <Link to="/dang-ky">
+                            <i className="fa fa-user-plus" style={{ marginRight: "5px" }}></i>
+                            Đăng ký
+                          </Link>
+                        </li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -124,7 +236,7 @@ function Menu() {
                       </Link>
                     </li>
                     <li>
-                      <a href="phim.html">
+                      <a href="/phim-sap-chieu">
                         <i className="fa fa-clock-o"></i>Phim Sắp Chiếu
                       </a>
                     </li>

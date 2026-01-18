@@ -1,45 +1,77 @@
 import React, { useState, useEffect } from "react";
-import mdv from "../assets/images/mdv.jpg";
-import bd1 from "../assets/images/bd1.jpg";
-import bd from "../assets/images/bd.jpg";
-import bd2 from "../assets/images/bd2.jpg";
-import bd3 from "../assets/images/bd3.jpg";
-function PhimDangChieu() {
-  //phim đang chiếu
-  useEffect(() => {
-    const movieSwiper = new Swiper(".mySwiper", {
-      loop: true,
-      centeredSlides: true,
-      spaceBetween: 20,
-      autoplay: {
-        delay: 3500,
-        disableOnInteraction: false,
-      },
-      navigation: {
-        nextEl: ".swiper-button-next",
-        prevEl: ".swiper-button-prev",
-      },
-      speed: 800,
-      grabCursor: true,
-      effect: "slide",
-      breakpoints: {
-        0: {
-          slidesPerView: 2, // Mobile
-        },
-        768: {
-          slidesPerView: 3, // Tablet
-        },
-        1024: {
-          slidesPerView: 3, // Desktop
-        },
-      },
-    });
+import MovieApi from "../api/MovieApi";
 
-    // cleanup khi component unmount
-    return () => {
-      movieSwiper.destroy();
-    };
+function PhimDangChieu() {
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch phim đang chiếu từ API
+  useEffect(() => {
+    fetchNowShowingMovies();
   }, []);
+
+  const fetchNowShowingMovies = async () => {
+    try {
+      setLoading(true);
+      const result = await MovieApi.getNowShowing();
+      if (result.success) {
+        setMovies(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching now showing movies:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Khởi tạo Swiper sau khi movies đã load
+  useEffect(() => {
+    if (!loading && movies.length > 0 && window.Swiper) {
+      const movieSwiper = new window.Swiper(".mySwiper", {
+        loop: true,
+        centeredSlides: true,
+        spaceBetween: 20,
+        autoplay: {
+          delay: 3500,
+          disableOnInteraction: false,
+        },
+        navigation: {
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
+        },
+        speed: 800,
+        grabCursor: true,
+        effect: "slide",
+        breakpoints: {
+          0: {
+            slidesPerView: 2, // Mobile
+          },
+          768: {
+            slidesPerView: 3, // Tablet
+          },
+          1024: {
+            slidesPerView: 3, // Desktop
+          },
+        },
+      });
+
+      // cleanup khi component unmount
+      return () => {
+        movieSwiper.destroy();
+      };
+    }
+  }, [loading, movies]);
+
+  // Format thời lượng
+  const formatDuration = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours} giờ ${mins} phút`;
+    }
+    return `${mins} phút`;
+  };
+
   return (
     <div>
       <section className="phimdangchieu">
@@ -52,183 +84,47 @@ function PhimDangChieu() {
         </div>
         <div className="swiper mySwiper">
           <div className="swiper-wrapper">
-            {/* <!-- Slide 1 --> */}
-            <div className="swiper-slide">
-              <div className="movie-card">
-                {/* <!-- Poster bên trái --> */}
-                <div className="movie-poster">
-                  <img src={mdv} alt="Poster phim 1" />
-                </div>
-
-                {/* <!-- Thông tin bên phải --> */}
-                <div className="movie-info">
-                  <h3>MƯA ĐỎ (T13)</h3>
-                  <div className="tags">
-                    <span className="tag">2D</span>
-                    <span className="tag">⏱ 2 giờ 4 phút</span>
-                    <span className="tag age">T13</span>
+            {movies.map((movie) => (
+              <div className="swiper-slide" key={movie.MovieId}>
+                <div className="movie-card">
+                  {/* <!-- Poster bên trái --> */}
+                  <div className="movie-poster">
+                    <img 
+                      src={movie.PosterUrl} 
+                      alt={movie.Title}
+                      onError={(e) => {
+                        e.target.src = "/default-poster.jpg";
+                      }}
+                    />
                   </div>
-                  <p>
-                    <b>Thể loại:</b> Hành động, Lịch sử
-                  </p>
-                  <p>
-                    <b>Đạo diễn:</b> NSUT Đặng Thái Huyền
-                  </p>
-                  <p>
-                    <b>Diễn viên:</b> Đỗ Nhật Hoàng, Phương Nam...
-                  </p>
-                  <p className="desc">
-                    "Mưa Đỏ" – Phim về chiến tranh cách mạng, lấy cảm hứng từ sự
-                    kiện 81 ngày đêm...
-                  </p>
-                  <a href="#" className="btn-book">
-                    🎟 Đặt vé
-                  </a>
+
+                  {/* <!-- Thông tin bên phải --> */}
+                  <div className="movie-info">
+                    <h3>{movie.Title}</h3>
+                    <div className="tags">
+                      <span className="tag">2D</span>
+                      <span className="tag">⏱ {formatDuration(movie.Duration)}</span>
+                      <span className="tag age">{movie.Rated}</span>
+                    </div>
+                    <p>
+                      <b>Thể loại:</b> {movie.Genre}
+                    </p>
+                    <p>
+                      <b>Đạo diễn:</b> {movie.Director}
+                    </p>
+                    <p>
+                      <b>Diễn viên:</b> {movie.Cast}
+                    </p>
+                    <p className="desc">
+                      {movie.Description}
+                    </p>
+                    <a href={`/movie/${movie.MovieId}`} className="btn-book">
+                      🎟 Đặt vé
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* <!-- Slide 2 --> */}
-            <div className="swiper-slide">
-              <div className="movie-card">
-                {/* <!-- Poster bên trái --> */}
-                <div className="movie-poster">
-                  <img src={bd1} alt="Poster phim 1" />
-                </div>
-
-                {/* <!-- Thông tin bên phải --> */}
-                <div className="movie-info">
-                  <h3>MƯA ĐỎ (T13)</h3>
-                  <div className="tags">
-                    <span className="tag">2D</span>
-                    <span className="tag">⏱ 2 giờ 4 phút</span>
-                    <span className="tag age">T13</span>
-                  </div>
-                  <p>
-                    <b>Thể loại:</b> Hành động, Lịch sử
-                  </p>
-                  <p>
-                    <b>Đạo diễn:</b> NSUT Đặng Thái Huyền
-                  </p>
-                  <p>
-                    <b>Diễn viên:</b> Đỗ Nhật Hoàng, Phương Nam...
-                  </p>
-                  <p className="desc">
-                    "Mưa Đỏ" – Phim về chiến tranh cách mạng, lấy cảm hứng từ sự
-                    kiện 81 ngày đêm...
-                  </p>
-                  <a href="#" className="btn-book">
-                    🎟 Đặt vé
-                  </a>
-                </div>
-              </div>
-            </div>
-            {/* <!-- Slide 2 --> */}
-            <div className="swiper-slide">
-              <div className="movie-card">
-                {/* <!-- Poster bên trái --> */}
-                <div className="movie-poster">
-                  <img src={bd} alt="Poster phim 1" />
-                </div>
-
-                {/* <!-- Thông tin bên phải --> */}
-                <div className="movie-info">
-                  <h3>MƯA ĐỎ (T13)</h3>
-                  <div className="tags">
-                    <span className="tag">2D</span>
-                    <span className="tag">⏱ 2 giờ 4 phút</span>
-                    <span className="tag age">T13</span>
-                  </div>
-                  <p>
-                    <b>Thể loại:</b> Hành động, Lịch sử
-                  </p>
-                  <p>
-                    <b>Đạo diễn:</b> NSUT Đặng Thái Huyền
-                  </p>
-                  <p>
-                    <b>Diễn viên:</b> Đỗ Nhật Hoàng, Phương Nam...
-                  </p>
-                  <p className="desc">
-                    "Mưa Đỏ" – Phim về chiến tranh cách mạng, lấy cảm hứng từ sự
-                    kiện 81 ngày đêm...
-                  </p>
-                  <a href="#" className="btn-book">
-                    🎟 Đặt vé
-                  </a>
-                </div>
-              </div>
-            </div>
-            {/* <!-- Slide 2 --> */}
-            <div className="swiper-slide">
-              <div className="movie-card">
-                {/* <!-- Poster bên trái --> */}
-                <div className="movie-poster">
-                  <img src={bd2} alt="Poster phim 1" />
-                </div>
-
-                {/* <!-- Thông tin bên phải --> */}
-                <div className="movie-info">
-                  <h3>MƯA ĐỎ (T13)</h3>
-                  <div className="tags">
-                    <span className="tag">2D</span>
-                    <span className="tag">⏱ 2 giờ 4 phút</span>
-                    <span className="tag age">T13</span>
-                  </div>
-                  <p>
-                    <b>Thể loại:</b> Hành động, Lịch sử
-                  </p>
-                  <p>
-                    <b>Đạo diễn:</b> NSUT Đặng Thái Huyền
-                  </p>
-                  <p>
-                    <b>Diễn viên:</b> Đỗ Nhật Hoàng, Phương Nam...
-                  </p>
-                  <p className="desc">
-                    "Mưa Đỏ" – Phim về chiến tranh cách mạng, lấy cảm hứng từ sự
-                    kiện 81 ngày đêm...
-                  </p>
-                  <a href="#" className="btn-book">
-                    🎟 Đặt vé
-                  </a>
-                </div>
-              </div>
-            </div>
-            {/* <!-- Slide 2 --> */}
-            <div className="swiper-slide">
-              <div className="movie-card">
-                {/* <!-- Poster bên trái --> */}
-                <div className="movie-poster">
-                  <img src={bd3} alt="Poster phim 1" />
-                </div>
-
-                {/* <!-- Thông tin bên phải --> */}
-                <div className="movie-info">
-                  <h3>MƯA ĐỎ (T13)</h3>
-                  <div className="tags">
-                    <span className="tag">2D</span>
-                    <span className="tag">⏱ 2 giờ 4 phút</span>
-                    <span className="tag age">T13</span>
-                  </div>
-                  <p>
-                    <b>Thể loại:</b> Hành động, Lịch sử
-                  </p>
-                  <p>
-                    <b>Đạo diễn:</b> NSUT Đặng Thái Huyền
-                  </p>
-                  <p>
-                    <b>Diễn viên:</b> Đỗ Nhật Hoàng, Phương Nam...
-                  </p>
-                  <p className="desc">
-                    "Mưa Đỏ" – Phim về chiến tranh cách mạng, lấy cảm hứng từ sự
-                    kiện 81 ngày đêm...
-                  </p>
-                  <a href="#" className="btn-book">
-                    🎟 Đặt vé
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* <!-- Thêm slide khác --> */}
+            ))}
           </div>
           {/* <!-- Nút điều hướng --> */}
           <div className="swiper-button-prev"></div>
