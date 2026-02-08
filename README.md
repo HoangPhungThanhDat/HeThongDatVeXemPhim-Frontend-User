@@ -1,7 +1,7 @@
 <div align="center">
 
-# 🎬 Cinema Booking System
-### User Portal - Giao Diện Người Dùng Đặt Vé Xem Phim
+# Hệ thống đặt vé rạp chiếu phim
+### Gấu Phim - Giao Diện Người Dùng Đặt Vé Xem Phim
 
 <img src="https://img.shields.io/badge/React-18.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React"/>
 <img src="https://img.shields.io/badge/Bootstrap-4.6-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap"/>
@@ -35,7 +35,7 @@
 
 ## 🌟 Giới Thiệu
 
-**Cinema User Portal** là giao diện người dùng hiện đại cho hệ thống đặt vé xem phim trực tuyến. Được thiết kế với trải nghiệm người dùng tối ưu, cung cấp đầy đủ tính năng từ tìm kiếm phim, đặt vé, chọn ghế đến thanh toán trực tuyến một cách nhanh chóng và tiện lợi.
+**Gấu Phim** là giao diện người dùng hiện đại cho hệ thống đặt vé xem phim trực tuyến. Được thiết kế với trải nghiệm người dùng tối ưu, cung cấp đầy đủ tính năng từ tìm kiếm phim, đặt vé, chọn ghế đến thanh toán trực tuyến một cách nhanh chóng và tiện lợi.
 
 ### 🎯 Điểm Nổi Bật
 
@@ -1621,42 +1621,37 @@ SOFTWARE.
 
 ---
 
-## ⭐ Star History
 
-<div align="center">
-
-[![Star History Chart](https://api.star-history.com/svg?repos=your-username/cinema-user-frontend&type=Date)](https://star-history.com/#your-username/cinema-user-frontend&Date)
-
----
-
-### 🎬 Screenshot Gallery
+### Screenshot Gallery
 
 <table>
   <tr>
     <td width="50%">
-      <img src="screenshots/home.png" alt="Home Page"/>
+      <img src="src/assets/images/trangchu.jpg" alt="Home Page"/>
       <p align="center"><b>Trang chủ</b></p>
     </td>
     <td width="50%">
-      <img src="screenshots/movies.png" alt="Movies Page"/>
+      <img src="src/assets/images/danhsachphim.jpg" alt="Movies Page"/>
       <p align="center"><b>Danh sách phim</b></p>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="screenshots/booking.png" alt="Booking Page"/>
+      <img src="src/assets/images/datve.jpg" alt="Booking Page"/>
       <p align="center"><b>Đặt vé</b></p>
     </td>
     <td width="50%">
-      <img src="screenshots/payment.png" alt="Payment Page"/>
-      <p align="center"><b>Thanh toán</b></p>
+      <img src="src/assets/images/mobile1.jpg" alt="Payment Page"/>
+      <p align="center"><b>Giao diện mobile</b></p>
     </td>
   </tr>
 </table>
 
 ---
 
-**Nếu dự án này hữu ích, đừng quên cho một ⭐ nhé!**
+<div align="center">
+
+**Nếu dự án này hữu ích, đừng quên cho một ⭐ nhé!**  
 
 Made with ❤️ by **Gấu Phim Team**
 

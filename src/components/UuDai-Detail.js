@@ -8,6 +8,16 @@ function UuDai() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🔧 Format nội dung để tự động ngắt dòng
+  const formatDescription = (content) => {
+    if (!content) return "";
+
+    return content
+      .replace(/\r\n/g, "<br/>")
+      .replace(/\n/g, "<br/>")
+      .replace(/\r/g, "<br/>");
+  };
+
   // Fetch chi tiết khuyến mãi
   useEffect(() => {
     const fetchPromotionDetail = async () => {
@@ -40,11 +50,11 @@ function UuDai() {
 
   return (
     <section
-      className="filmoja-blog-page section_15 container bg-main"
+      className="filmoja-login-area section_15 bg-main"
       style={{
         background: "#e6e7e9",
         maxWidth: "100%",
-        borderTop: "1px solid",
+        borderTop: "1px solid #ccc",
       }}
     >
       <div className="container">
@@ -129,7 +139,7 @@ function UuDai() {
                           <div
                             className="promotion-content"
                             dangerouslySetInnerHTML={{
-                              __html: promotion.Description,
+                              __html: formatDescription(promotion.Description),
                             }}
                           />
                         )}

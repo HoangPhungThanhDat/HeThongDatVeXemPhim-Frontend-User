@@ -15,7 +15,9 @@ const PhimSapChieuPage = () => {
   const fetchComingSoonMovies = async () => {
     try {
       setLoading(true);
-      const result = await MovieApi.getComingSoonMovies(20); // Lấy 20 phim sắp chiếu
+      const result = await MovieApi.getComingSoonMovies(20);
+      
+      console.log("📥 Coming Soon Movies:", result.data); // Debug
       
       if (result.success) {
         setMovies(result.data);
@@ -29,6 +31,39 @@ const PhimSapChieuPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Format danh sách diễn viên từ array
+  const formatActors = (actors, maxItems = 3) => {
+    if (!actors || !Array.isArray(actors) || actors.length === 0) {
+      return "Chưa cập nhật";
+    }
+    
+    const actorNames = actors.map(actor => actor.Name || actor.name);
+    
+    if (actorNames.length > maxItems) {
+      return actorNames.slice(0, maxItems).join(", ") + "...";
+    }
+    
+    return actorNames.join(", ");
+  };
+
+  // ✅ Format danh sách đạo diễn từ array
+  const formatDirectors = (directors) => {
+    if (!directors || !Array.isArray(directors) || directors.length === 0) {
+      return "Chưa cập nhật";
+    }
+    
+    return directors.map(director => director.Name || director.name).join(", ");
+  };
+
+  // ✅ Lấy tên thể loại từ object
+  const getGenreName = (genre) => {
+    if (!genre) return "Chưa phân loại";
+    if (typeof genre === 'string') return genre;
+    if (genre.Name) return genre.Name;
+    if (genre.name) return genre.name;
+    return "Chưa phân loại";
   };
 
   // Chuyển đổi URL YouTube thành embed URL
@@ -56,7 +91,6 @@ const PhimSapChieuPage = () => {
         videoId = url.split("v/")[1]?.split("?")[0];
       }
       
-      // Loại bỏ ký tự không hợp lệ
       if (videoId) {
         videoId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
       }
@@ -119,9 +153,12 @@ const PhimSapChieuPage = () => {
   };
 
   const renderMovieCard = (movie) => {
+    console.log("📽️ Rendering movie:", movie); // Debug
+    
     // Xử lý tên field có thể khác nhau từ API
     const posterUrl = movie.PosterUrl || movie.PosterURL || movie.posterUrl || movie.ImageUrl;
     const movieId = movie.MovieId || movie.MovieID || movie.movieId || movie.id;
+    const slug = movie.Slug || movie.slug || movieId;
     
     return (
       <div 
@@ -131,7 +168,7 @@ const PhimSapChieuPage = () => {
       >
         <article className="entry-item">
           <div className="front">
-            <div className="entry-thumb">
+            <div className="entry-thumb" style={{ position: 'relative' }}>
               <img 
                 src={posterUrl || "https://via.placeholder.com/300x450?text=No+Image"} 
                 alt={movie.Title}
@@ -154,29 +191,31 @@ const PhimSapChieuPage = () => {
                 SẮP CHIẾU
               </div>
             </div>
-            <a href={`/film/${movieId}`}>
+            <a href={`/phim/${slug}`}>
               <h4 className="entry-title">{movie.Title}</h4>
             </a>
             <div className="entry-genre">
-              <p>{movie.Genre || "Chưa phân loại"}</p>
+              {/* ✅ HIỂN THỊ THỂ LOẠI */}
+              <p>{getGenreName(movie.genre || movie.Genre)}</p>
             </div>
           </div>
         
           <div className="back">
             <h3 className="entry-title">
-              <a href={`/film/${movieId}`}>{movie.Title}</a>
+              <a href={`/phim/${slug}`}>{movie.Title}</a>
             </h3>
             <span className="pg">{movie.Rated || movie.AgeRating || "P"}</span>
             
             <div className="movie-char-info-left">
-              <p style={{ fontStyle: 'italic' }}>{movie.Genre || "Chưa phân loại"}</p>
+              {/* ✅ HIỂN THỊ THỂ LOẠI */}
+              <p style={{ fontStyle: 'italic' }}>{getGenreName(movie.genre || movie.Genre)}</p>
             </div>
             
             {/* Ngày khởi chiếu */}
             <div className="entry-time" style={{ marginBottom: '10px' }}>
               <i className="fa fa-calendar"></i>
               <span style={{ marginLeft: '5px', fontWeight: 'bold', color: '#ff9800' }}>
-                Khởi chiếu: {formatDate(movie.ReleaseDate)}
+                Khởi chiếu: {formatDate(movie.ReleaseDate || movie.releaseDate)}
               </span>
             </div>
             
@@ -185,7 +224,15 @@ const PhimSapChieuPage = () => {
               {movie.Duration ? `${movie.Duration} phút` : "Chưa cập nhật"}
             </div>
             
-            <p>{movie.Description || "Chưa có mô tả"}</p>
+            <p style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical'
+            }}>
+              {movie.Description || "Chưa có mô tả"}
+            </p>
             
             <div className="entry-button">
               {(movie.TrailerUrl || movie.TrailerURL) && (
@@ -198,7 +245,7 @@ const PhimSapChieuPage = () => {
                   <i aria-hidden="true" className="fa fa-play"></i>Trailer
                 </a>
               )}
-              <a href={`/film/${movieId}`}>
+              <a href={`/phim/${slug}`}>
                 <i aria-hidden="true" className="fa fa-info-circle"></i>Chi tiết
               </a>
             </div>
@@ -206,21 +253,37 @@ const PhimSapChieuPage = () => {
             <div className="movie-char-info">
               <div className="clearfix"></div>
               
-              {movie.Director && (
+              {/* ✅ HIỂN THỊ ĐẠO DIỄN */}
+              {(movie.directors || movie.Director) && (
                 <>
                   <div className="movie-char-info-left">
                     <h6>Đạo diễn</h6>
-                    <span>{movie.Director}</span>
+                    <span style={{
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {movie.directors ? formatDirectors(movie.directors) : movie.Director}
+                    </span>
                   </div>
                   <div className="clearfix"></div>
                 </>
               )}
               
-              {movie.Cast && (
+              {/* ✅ HIỂN THỊ DIỄN VIÊN */}
+              {(movie.actors || movie.Cast) && (
                 <>
                   <div className="movie-char-info-right">
                     <h6>Diễn viên</h6>
-                    <span>{movie.Cast}</span>
+                    <span style={{
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {movie.actors ? formatActors(movie.actors, 3) : movie.Cast}
+                    </span>
                   </div>
                   <div className="clearfix"></div>
                 </>
@@ -235,13 +298,13 @@ const PhimSapChieuPage = () => {
   return (
     <div>
       <section
-      className="filmoja-login-area section_70 bg-main"
-      style={{
-        background: "#e6e7e9",
-        maxWidth: "100%",
-        borderTop: "1px solid #ccc",
-      }}
-    >
+        className="filmoja-login-area section_70 bg-main"
+        style={{
+          background: "#e6e7e9",
+          maxWidth: "100%",
+          borderTop: "1px solid #ccc",
+        }}
+      >
         <div className="container">
           <div className="movie-grid-box list-film">
             <div className="amy-mv-grid layout3" style={{ textAlign: 'center' }}>

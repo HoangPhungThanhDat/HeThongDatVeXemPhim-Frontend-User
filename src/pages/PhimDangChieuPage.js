@@ -17,6 +17,8 @@ const PhimDangChieuPage = () => {
       setLoading(true);
       const result = await MovieApi.getNowShowing();
       
+      console.log("📥 Movies data:", result.data); // Debug
+      
       if (result.success) {
         setMovies(result.data);
         setError(null);
@@ -31,11 +33,44 @@ const PhimDangChieuPage = () => {
     }
   };
 
+  // ✅ Format danh sách diễn viên từ array
+  const formatActors = (actors, maxItems = 3) => {
+    if (!actors || !Array.isArray(actors) || actors.length === 0) {
+      return "Chưa cập nhật";
+    }
+    
+    const actorNames = actors.map(actor => actor.Name || actor.name);
+    
+    if (actorNames.length > maxItems) {
+      return actorNames.slice(0, maxItems).join(", ") + "...";
+    }
+    
+    return actorNames.join(", ");
+  };
+
+  // ✅ Format danh sách đạo diễn từ array
+  const formatDirectors = (directors) => {
+    if (!directors || !Array.isArray(directors) || directors.length === 0) {
+      return "Chưa cập nhật";
+    }
+    
+    return directors.map(director => director.Name || director.name).join(", ");
+  };
+
+  // ✅ Lấy tên thể loại từ object
+  const getGenreName = (genre) => {
+    if (!genre) return "Chưa phân loại";
+    if (typeof genre === 'string') return genre;
+    if (genre.Name) return genre.Name;
+    if (genre.name) return genre.name;
+    return "Chưa phân loại";
+  };
+
   // Chuyển đổi URL YouTube thành embed URL
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return "";
     
-    console.log("Original trailer URL:", url); // Debug
+    console.log("Original trailer URL:", url);
     
     // Nếu là YouTube ID thuần (11 ký tự)
     if (!url.includes("http") && url.length === 11) {
@@ -65,7 +100,7 @@ const PhimDangChieuPage = () => {
     }
     
     const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` : "";
-    console.log("Embed URL:", embedUrl); // Debug
+    console.log("Embed URL:", embedUrl);
     
     return embedUrl;
   };
@@ -74,16 +109,15 @@ const PhimDangChieuPage = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log("Play trailer clicked:", trailerUrl); // Debug
+    console.log("Play trailer clicked:", trailerUrl);
     
     const embedUrl = getYouTubeEmbedUrl(trailerUrl);
     
     if (embedUrl) {
       setSelectedTrailer(embedUrl);
       setShowModal(true);
-      // Ngăn scroll khi modal mở
       document.body.style.overflow = 'hidden';
-      console.log("Modal should open now"); // Debug
+      console.log("Modal should open now");
     } else {
       console.error("Invalid trailer URL:", trailerUrl);
       alert("Không thể phát trailer. URL không hợp lệ.");
@@ -93,7 +127,6 @@ const PhimDangChieuPage = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedTrailer("");
-    // Cho phép scroll lại
     document.body.style.overflow = 'auto';
   };
 
@@ -110,9 +143,12 @@ const PhimDangChieuPage = () => {
   }, [showModal]);
 
   const renderMovieCard = (movie) => {
+    console.log("📽️ Rendering movie:", movie); // Debug
+    
     // Xử lý tên field có thể khác nhau từ API
     const posterUrl = movie.PosterUrl || movie.PosterURL || movie.posterUrl || movie.ImageUrl;
     const movieId = movie.MovieId || movie.MovieID || movie.movieId || movie.id;
+    const slug = movie.Slug || movie.slug || movieId;
     
     return (
       <div 
@@ -131,22 +167,24 @@ const PhimDangChieuPage = () => {
                 }}
               />
             </div>
-            <a href={`/film/${movieId}`}>
+            <a href={`/lich-chieu/${slug}`}>
               <h4 className="entry-title">{movie.Title}</h4>
             </a>
             <div className="entry-genre">
-              <p>{movie.Genre || "Chưa phân loại"}</p>
+              {/* ✅ HIỂN THỊ THỂ LOẠI */}
+              <p>{getGenreName(movie.genre || movie.Genre)}</p>
             </div>
           </div>
         
           <div className="back">
             <h3 className="entry-title">
-              <a href={`/film/${movieId}`}>{movie.Title}</a>
+              <a href={`/lich-chieu/${slug}`}>{movie.Title}</a>
             </h3>
             <span className="pg">{movie.Rated || movie.AgeRating || "P"}</span>
             
             <div className="movie-char-info-left">
-              <p style={{ fontStyle: 'italic' }}>{movie.Genre || "Chưa phân loại"}</p>
+              {/* ✅ HIỂN THỊ THỂ LOẠI */}
+              <p style={{ fontStyle: 'italic' }}>{getGenreName(movie.genre || movie.Genre)}</p>
             </div>
             
             <div className="entry-time">
@@ -154,7 +192,15 @@ const PhimDangChieuPage = () => {
               {movie.Duration ? `${movie.Duration} phút` : "Chưa cập nhật"}
             </div>
             
-            <p>{movie.Description || "Chưa có mô tả"}</p>
+            <p style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical'
+            }}>
+              {movie.Description || "Chưa có mô tả"}
+            </p>
             
             <div className="entry-button">
               {(movie.TrailerUrl || movie.TrailerURL) && (
@@ -167,7 +213,7 @@ const PhimDangChieuPage = () => {
                   <i aria-hidden="true" className="fa fa-play"></i>Trailer
                 </a>
               )}
-              <a href={`/film/${movieId}`}>
+              <a href={`/lich-chieu/${slug}`}>
                 <i aria-hidden="true" className="fa fa-ticket"></i>Đặt vé
               </a>
             </div>
@@ -175,21 +221,37 @@ const PhimDangChieuPage = () => {
             <div className="movie-char-info">
               <div className="clearfix"></div>
               
-              {movie.Director && (
+              {/* ✅ HIỂN THỊ ĐẠO DIỄN */}
+              {(movie.directors || movie.Director) && (
                 <>
                   <div className="movie-char-info-left">
                     <h6>Đạo diễn</h6>
-                    <span>{movie.Director}</span>
+                    <span style={{
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {movie.directors ? formatDirectors(movie.directors) : movie.Director}
+                    </span>
                   </div>
                   <div className="clearfix"></div>
                 </>
               )}
               
-              {movie.Cast && (
+              {/* ✅ HIỂN THỊ DIỄN VIÊN */}
+              {(movie.actors || movie.Cast) && (
                 <>
                   <div className="movie-char-info-right">
                     <h6>Diễn viên</h6>
-                    <span>{movie.Cast}</span>
+                    <span style={{
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {movie.actors ? formatActors(movie.actors, 3) : movie.Cast}
+                    </span>
                   </div>
                   <div className="clearfix"></div>
                 </>
@@ -203,14 +265,14 @@ const PhimDangChieuPage = () => {
 
   return (
     <div>
-       <section
-      className="filmoja-login-area section_70 bg-main"
-      style={{
-        background: "#e6e7e9",
-        maxWidth: "100%",
-        borderTop: "1px solid #ccc",
-      }}
-    >
+      <section
+        className="filmoja-login-area section_70 bg-main"
+        style={{
+          background: "#e6e7e9",
+          maxWidth: "100%",
+          borderTop: "1px solid #ccc",
+        }}
+      >
         <div className="container">
           <div className="movie-grid-box list-film">
             <div className="amy-mv-grid layout3" style={{ textAlign: 'center' }}>
@@ -280,7 +342,7 @@ const PhimDangChieuPage = () => {
         </div>
       </section>
 
-      {/* Modal Trailer YouTube - Giống PhimMoi */}
+      {/* Modal Trailer YouTube */}
       {showModal && (
         <div 
           className="trailer-modal-overlay"

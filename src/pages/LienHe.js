@@ -1,11 +1,82 @@
-import React, { useState, useEffect } from "react";
-import tintuc1 from "../assets/images/doraemon.jpg";
-import tintuc2 from "../assets/images/tham-tu-kien.jpg";
-import tintuc3 from "../assets/images/LAT-MAT-8.jpg";
-import tintuc4 from "../assets/images/quy-nhap-trang.jpg";
-import tintuc5 from "../assets/images/flow.jpg";
-import tintuc6 from "../assets/images/nha-gia-tien.jpg";
+// src/pages/LienHe.js
+import React, { useState } from "react";
+import ContactApi from "../api/ContactApi";
+
 function LienHe() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+
+  const [message, setMessage] = useState({ type: "", text: "" });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validate
+    if (!formData.name.trim()) {
+      setMessage({ type: "error", text: "Xin hãy nhập Họ tên." });
+      return;
+    }
+    if (!formData.email.trim()) {
+      setMessage({ type: "error", text: "Xin hãy nhập Email." });
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setMessage({ type: "error", text: "Xin hãy nhập Số điện thoại." });
+      return;
+    }
+    if (!formData.message.trim()) {
+      setMessage({ type: "error", text: "Xin hãy nhập Nội dung." });
+      return;
+    }
+
+    setLoading(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      // Lấy UserId từ localStorage (đã save khi login)
+      const UserId = localStorage.getItem("UserId");
+
+      const payload = {
+        UserId: UserId,
+        FullName: formData.name,
+        Email: formData.email,
+        Phone: formData.phone,
+        Message: formData.message,
+        Status: "New",
+      };
+
+      await ContactApi.create(payload);
+
+      setMessage({ type: "success", text: "Liên hệ đã được gửi thành công!" });
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } catch (error) {
+      console.error("Lỗi gửi liên hệ:", error);
+      // axiosClient đã return response.data nên errors có thể ở error.errors
+      if (error.errors) {
+        const firstError = Object.values(error.errors)[0][0];
+        setMessage({ type: "error", text: firstError });
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        const firstError = Object.values(errors)[0][0];
+        setMessage({ type: "error", text: firstError });
+      } else {
+        setMessage({ type: "error", text: "Gửi liên hệ thất bại. Thử lại sau." });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section
       className="filmoja-login-area section_70 bg-main"
@@ -17,7 +88,7 @@ function LienHe() {
     >
       <div className="container">
         <div className="row">
-          {/* <!-- Start of Contact Details --> */}
+          {/* Contact Details */}
           <div className="col-md-4 col-sm-12">
             <h3
               className="title"
@@ -27,7 +98,6 @@ function LienHe() {
                 fontWeight: 500,
                 color: "#444444",
                 textDecoration: "underline",
-
                 WebkitBackgroundSize: "21px 6px",
                 backgroundSize: "21px 6px",
                 backgroundPosition: "left center",
@@ -49,9 +119,8 @@ function LienHe() {
                   <i className="icon-printer"></i>
                   <strong>TRỤ SỞ CHÍNH:</strong>
                   <span>
-                    {" "}
                     39 TRẦN KHÁNH DƯ, PHƯỜNG TÂN LỢI, TP. BUÔN MA THUỘT, TỈNH
-                    ĐẮK LẮK, VIỆT NAM{" "}
+                    ĐẮK LẮK, VIỆT NAM
                   </span>
                 </li>
                 <li>
@@ -71,8 +140,8 @@ function LienHe() {
               </ul>
             </div>
           </div>
-          {/* <!-- Start of Contact Details -->
-                        <!-- Start of Contact Form --> */}
+
+          {/* Contact Form */}
           <div className="col-md-8 col-sm-12">
             <h3
               className="title"
@@ -93,73 +162,90 @@ function LienHe() {
               Gửi liên hệ
             </h3>
 
-            {/* <!-- Start of Contact Form --> */}
-            <form id="contact-form">
-              {/* <!-- contact result --> */}
-              <div id="contact-result"></div>
-              {/* <!-- end of contact result -->
-                                <!-- Form Group --> */}
+            {/* Message display */}
+            <div id="contact-result">
+              {message.text && (
+                <div
+                  style={{
+                    padding: "10px 15px",
+                    marginBottom: "15px",
+                    borderRadius: "4px",
+                    color: message.type === "success" ? "#155724" : "#842029",
+                    backgroundColor:
+                      message.type === "success" ? "#d4edda" : "#f8d7da",
+                    border: `1px solid ${message.type === "success" ? "#c3e6cb" : "#f5c6cb"}`,
+                  }}
+                >
+                  {message.text}
+                </div>
+              )}
+            </div>
+
+            <form id="contact-form" onSubmit={handleSubmit}>
+              {/* Name */}
               <div className="form-group">
                 <input
                   className="form-control input-box"
                   type="text"
                   name="name"
-                  id="cName"
+                  value={formData.name}
+                  onChange={handleChange}
                   placeholder="Họ tên"
-                  autocomplete="off"
+                  autoComplete="off"
                 />
               </div>
 
-              {/* <!-- Form Group --> */}
+              {/* Email */}
               <div className="form-group">
                 <input
                   className="form-control input-box"
                   type="email"
                   name="email"
-                  id="cEmail"
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="your-email@gmail.com"
-                  autocomplete="off"
+                  autoComplete="off"
                 />
               </div>
 
-              {/* <!-- Form Group --> */}
+              {/* Phone */}
               <div className="form-group">
                 <input
                   className="form-control input-box"
                   type="text"
-                  name="subject"
-                  id="cPhone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
                   placeholder="SĐT"
-                  autocomplete="off"
+                  autoComplete="off"
                 />
               </div>
 
-              {/* <!-- Form Group --> */}
+              {/* Message */}
               <div className="form-group mb20">
                 <textarea
                   className="form-control textarea-box"
                   rows="8"
-                  id="cContent"
                   name="message"
+                  value={formData.message}
+                  onChange={handleChange}
                   placeholder="Nội dung cần liên hệ..."
                 ></textarea>
               </div>
 
-              {/* <!-- Form Group --> */}
+              {/* Submit */}
               <div className="form-group text-center">
                 <button
                   className="btn btn-main btn-effect"
                   type="submit"
+                  disabled={loading}
                   style={{ background: "#f37a3b", color: "#fff" }}
-                  onclick="sendContact()"
                 >
-                  Send
+                  {loading ? "Đang gửi..." : "Send"}
                 </button>
               </div>
             </form>
-            {/* <!-- End of Contact Form --> */}
           </div>
-          {/* <!-- Start of Contact Form --> */}
         </div>
       </div>
     </section>

@@ -26,6 +26,8 @@ import ChiTietTinTuc from '../components/ChiTietTinTuc';
 import ChiTietLichChieu from '../components/LichChieu-Detail';
 import ThongTinCaNhanPage01 from '../components/ThongTinCaNhan';
 import ChonGhe01  from '../components/ChonGhe';
+import CapNhatTaiKhoan from "../components/CapNhatTaiKhoan";
+import CapNhatMatKhau from "../components/CapNhatMatKhau";
 
 
 
@@ -180,6 +182,25 @@ function ChonGhe() {
   );
 }
 
+function CapNhatTaiKhoanPage() {
+  return(
+    <>
+    <Menu />
+    <CapNhatTaiKhoan />
+    <Footer />
+    </>
+  );
+}
+
+function CapNhatMatKhauPage() {
+  return(
+    <>
+    <Menu />
+    <CapNhatMatKhau />
+    <Footer />
+    </>
+  );
+}
 // Wrap các page với loader
 const HomePageWithLoader = withLoader(HomePage);
 const LichChieuPageWithLoader = withLoader(LichChieuPage);
@@ -195,6 +216,8 @@ const TinTucDetailWithLoader = withLoader(TinTucDetail);
 const LichChieuDetailWithLoader = withLoader(LichChieuDetail);
 const ThongTinCaNhanWithLoader = withLoader(ThongTinCaNhanPage);
 const ChonGheWithLoader = withLoader(ChonGhe);
+const CapNhatTaiKhoanWithLoader = withLoader(CapNhatTaiKhoanPage);
+const CapNhatMatKhauWithLoader = withLoader(CapNhatMatKhauPage);
 
 
 
@@ -217,6 +240,8 @@ export default function AdminRoutes() {
       <Route path="/lich-chieu-detail" element={<LichChieuDetailWithLoader />} />
       <Route path="/thong-tin-ca-nhan" element={<ThongTinCaNhanWithLoader />} />
       <Route path="/chon-ghe" element={<ChonGheWithLoader />} />
+      <Route path="/cap-nhat-tai-khoan" element={<CapNhatTaiKhoanWithLoader />} />
+      <Route path="/cap-nhat-mat-khau" element={<CapNhatMatKhauWithLoader />} />
     </Routes>
   );
 }

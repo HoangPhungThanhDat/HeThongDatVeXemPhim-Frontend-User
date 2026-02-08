@@ -5,11 +5,11 @@ import promotionApi from "../api/PromotionApi";
 function KhuyenMaiDetail() {
   return (
     <div
-      className="section section-padding tvshow-section section_30 container bg-main"
+      className="filmoja-login-area section_30 bg-main"
       style={{
         background: "#e6e7e9",
-        maxWidth: "100% !important",
-        borderTop: "1px solid",
+        maxWidth: "100%",
+        borderTop: "1px solid #ccc",
       }}
     >
       <div className="container">
