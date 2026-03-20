@@ -32,6 +32,9 @@ import CapNhatMatKhau from "../components/CapNhatMatKhau";
 
 
 
+import ChiTietPhim from "../components/ChiTietPhim";
+
+
 
 
 // Các page components
@@ -201,6 +204,17 @@ function CapNhatMatKhauPage() {
     </>
   );
 }
+
+
+function ChiTietPhimPage() {
+  return(
+    <>
+    <Menu />
+    <ChiTietPhim />
+    <Footer />
+    </>
+  );
+}
 // Wrap các page với loader
 const HomePageWithLoader = withLoader(HomePage);
 const LichChieuPageWithLoader = withLoader(LichChieuPage);
@@ -218,6 +232,7 @@ const ThongTinCaNhanWithLoader = withLoader(ThongTinCaNhanPage);
 const ChonGheWithLoader = withLoader(ChonGhe);
 const CapNhatTaiKhoanWithLoader = withLoader(CapNhatTaiKhoanPage);
 const CapNhatMatKhauWithLoader = withLoader(CapNhatMatKhauPage);
+const ChiTietPhimWithLoader = withLoader(ChiTietPhimPage);
 
 
 
@@ -242,6 +257,9 @@ export default function AdminRoutes() {
       <Route path="/chon-ghe" element={<ChonGheWithLoader />} />
       <Route path="/cap-nhat-tai-khoan" element={<CapNhatTaiKhoanWithLoader />} />
       <Route path="/cap-nhat-mat-khau" element={<CapNhatMatKhauWithLoader />} />
+      <Route path="/chi-tiet-phim/:slugOrId" element={<ChiTietPhimWithLoader />} />
+     
+      <Route path="/lich-chieu-detail/:cinemaId" element={<LichChieuDetail />} />
     </Routes>
   );
 }

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import MovieApi from "../api/MovieApi";
-
+import { useNavigate } from "react-router-dom";
 const PhimDangChieuPage = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState("");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchNowShowingMovies();
@@ -33,6 +35,13 @@ const PhimDangChieuPage = () => {
     }
   };
 
+   /* ─── Điều hướng sang trang chi tiết phim ──────────────────── */
+   const handleGoToDetail = (movie) => {
+    const movieId = movie.MovieId || movie.MovieID || movie.movieId || movie.id;
+    const slug    = movie.Slug   || movie.slug    || movieId;
+    navigate(`/chi-tiet-phim/${slug}`, { state: { movie } });
+  };
+  
   // ✅ Format danh sách diễn viên từ array
   const formatActors = (actors, maxItems = 3) => {
     if (!actors || !Array.isArray(actors) || actors.length === 0) {
@@ -213,7 +222,7 @@ const PhimDangChieuPage = () => {
                   <i aria-hidden="true" className="fa fa-play"></i>Trailer
                 </a>
               )}
-              <a href={`/lich-chieu/${slug}`}>
+              <a href="" onClick={() => handleGoToDetail(movie)}>
                 <i aria-hidden="true" className="fa fa-ticket"></i>Đặt vé
               </a>
             </div>

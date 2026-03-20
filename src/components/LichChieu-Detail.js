@@ -1,8 +1,123 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import promotionApi from "../api/PromotionApi";
+import { useParams } from "react-router-dom";
+import axiosClient from "../api/axiosClient";
+import CinemaApi from "../api/CinemasApi";
 
-function KhuyenMaiDetail() {
+// ✅ FIX: Dùng local time thay vì toISOString() để tránh lệch múi giờ UTC+7
+const toLocalDateStr = (d) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Helper: tạo 7 ngày từ hôm nay (giờ Việt Nam)
+const generateDates = () => {
+  const days = [
+    "Chủ Nhật",
+    "Thứ Hai",
+    "Thứ Ba",
+    "Thứ Tư",
+    "Thứ Năm",
+    "Thứ Sáu",
+    "Thứ Bảy",
+  ];
+  const result = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    result.push({
+      label: i === 0 ? "Hôm Nay" : days[d.getDay()],
+      dateStr: toLocalDateStr(d), // ✅ YYYY-MM-DD theo giờ địa phương
+      display: d.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+    });
+  }
+  return result;
+};
+
+// Helper: kiểm tra suất chiếu đã qua chưa
+const isShowtimePast = (selectedDate, startTime) => {
+  const today = toLocalDateStr(new Date()); // ✅ so sánh đúng ngày local
+  if (selectedDate !== today) return false;
+  const now = new Date();
+  const [hour, minute] = startTime.split(":").map(Number);
+  const showDate = new Date();
+  showDate.setHours(hour, minute, 0, 0);
+  return showDate < now;
+};
+
+function LichChieuDetail() {
+  const { cinemaId } = useParams();
+
+  const dates = generateDates();
+  const [selectedDate, setSelectedDate] = useState(dates[0].dateStr);
+  const [cinemaInfo, setCinemaInfo] = useState(null);
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cinemaLoading, setCinemaLoading] = useState(true);
+
+  // Lấy thông tin rạp
+  useEffect(() => {
+    if (!cinemaId) return;
+    const fetchCinema = async () => {
+      setCinemaLoading(true);
+      try {
+        const result = await CinemaApi.getAll();
+        if (result && result.success && Array.isArray(result.data)) {
+          const found = result.data.find(
+            (c) => String(c.CinemaId) === String(cinemaId)
+          );
+          setCinemaInfo(found || null);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy thông tin rạp:", err);
+      } finally {
+        setCinemaLoading(false);
+      }
+    };
+    fetchCinema();
+  }, [cinemaId]);
+
+  // Lấy lịch chiếu mỗi khi đổi ngày
+  useEffect(() => {
+    if (!cinemaId) return;
+    const fetchShowtimes = async () => {
+      setLoading(true);
+      setMovies([]);
+      try {
+        const raw = await axiosClient.get(
+          `/cinemas/${cinemaId}/showtimes?date=${selectedDate}`
+        );
+
+        console.log("Backend trả về:", raw);
+
+        let movieList = [];
+
+        if (raw && Array.isArray(raw.movies)) {
+          movieList = raw.movies;
+        } else if (raw && Array.isArray(raw.data?.movies)) {
+          movieList = raw.data.movies;
+        } else if (raw && Array.isArray(raw.data)) {
+          movieList = raw.data;
+        } else if (Array.isArray(raw)) {
+          movieList = raw;
+        }
+
+        setMovies(movieList);
+      } catch (err) {
+        console.error("Lỗi lấy lịch chiếu:", err);
+        setMovies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShowtimes();
+  }, [cinemaId, selectedDate]);
+
   return (
     <div
       className="filmoja-login-area section_30 bg-main"
@@ -15,6 +130,7 @@ function KhuyenMaiDetail() {
       <div className="container">
         <div className="row">
           <div className="col-sm-12">
+            {/* ── Thông tin rạp ── */}
             <div
               className="browse-option-box"
               style={{
@@ -29,332 +145,284 @@ function KhuyenMaiDetail() {
               <h3
                 style={{ width: "100%", textAlign: "center", color: "#f37a3b" }}
               >
-                STARLIGHT ĐÀ NẴNG
+                {cinemaLoading
+                  ? "ĐANG TẢI..."
+                  : cinemaInfo
+                  ? cinemaInfo.Name.toUpperCase()
+                  : "KHÔNG TÌM THẤY RẠP"}
               </h3>
               <p
                 style={{ width: "100%", textAlign: "center", color: "#22272b" }}
               >
-                1900 1722
+                {cinemaInfo?.Phone || "1900 1722"}
               </p>
               <p
                 style={{ width: "100%", textAlign: "center", color: "#22272b" }}
               >
-                Tầng 4 Toà nhà Nguyễn Kim, 46 Điện Biên Phủ, TP. Đà Nẵng
+                {cinemaInfo?.Address || ""}
               </p>
             </div>
 
+            {/* ── Tabs + Nội dung ── */}
             <div
               className="tabs movies ui-tabs ui-corner-all ui-widget ui-widget-content"
               id="schedule-tabs"
             >
               <div className="tv-panel-list">
                 <div className="tv-tab">
+                  {/* ── Tab chọn ngày (7 ngày động) ── */}
                   <ul
                     className="nav nav-pills tv-tab-switch schedule-list"
                     id="pills-tab"
                     role="tablist"
                   >
-                    <li className="nav-item">
-                      <a
-                        className="nav-link active show"
-                        id="pills-popular-tab-0"
-                        data-toggle="pill"
-                        href="#pills-popular-0"
-                        role="tab"
-                        aria-controls="pills-popular-0"
-                        aria-selected="true"
-                      >
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "0 15px",
-                            color: "#f37737",
-                            fontWeight: 600,
-                          }}
+                    {dates.map((d, idx) => (
+                      <li className="nav-item" key={idx}>
+                        <a
+                          className={`nav-link ${
+                            selectedDate === d.dateStr ? "active show" : ""
+                          }`}
+                          role="tab"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => setSelectedDate(d.dateStr)}
                         >
-                          Thứ Ba
-                        </p>
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "5px 15px",
-                            color: "#2b2b31",
-                          }}
-                        >
-                          06/01/2026
-                        </p>
-                      </a>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        id="pills-popular-tab-1"
-                        data-toggle="pill"
-                        href="#pills-popular-1"
-                        role="tab"
-                        aria-controls="pills-popular-1"
-                        aria-selected="false"
-                      >
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "0 15px",
-                            color: "#f37737",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Thứ Tư
-                        </p>
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "5px 15px",
-                            color: "#2b2b31",
-                          }}
-                        >
-                          07/01/2026
-                        </p>
-                      </a>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        id="pills-popular-tab-2"
-                        data-toggle="pill"
-                        href="#pills-popular-2"
-                        role="tab"
-                        aria-controls="pills-popular-2"
-                        aria-selected="false"
-                      >
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "0 15px",
-                            color: "#f37737",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Thứ Năm
-                        </p>
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "5px 15px",
-                            color: "#2b2b31",
-                          }}
-                        >
-                          08/01/2026
-                        </p>
-                      </a>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        id="pills-popular-tab-3"
-                        data-toggle="pill"
-                        href="#pills-popular-3"
-                        role="tab"
-                        aria-controls="pills-popular-3"
-                        aria-selected="false"
-                      >
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "0 15px",
-                            color: "#f37737",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Thứ Sáu
-                        </p>
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "5px 15px",
-                            color: "#2b2b31",
-                          }}
-                        >
-                          09/01/2026
-                        </p>
-                      </a>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        id="pills-popular-tab-4"
-                        data-toggle="pill"
-                        href="#pills-popular-4"
-                        role="tab"
-                        aria-controls="pills-popular-4"
-                        aria-selected="false"
-                      >
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "0 15px",
-                            color: "#f37737",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Thứ Bảy
-                        </p>
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "5px 15px",
-                            color: "#2b2b31",
-                          }}
-                        >
-                          10/01/2026
-                        </p>
-                      </a>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className="nav-link"
-                        id="pills-popular-tab-5"
-                        data-toggle="pill"
-                        href="#pills-popular-5"
-                        role="tab"
-                        aria-controls="pills-popular-5"
-                        aria-selected="false"
-                      >
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "0 15px",
-                            color: "#f37737",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Chủ Nhật
-                        </p>
-                        <p
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            padding: "5px 15px",
-                            color: "#2b2b31",
-                          }}
-                        >
-                          11/01/2026
-                        </p>
-                      </a>
-                    </li>
+                          <p
+                            style={{
+                              width: "100%",
+                              textAlign: "center",
+                              padding: "0 15px",
+                              color: "#f37737",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {d.label}
+                          </p>
+                          <p
+                            style={{
+                              width: "100%",
+                              textAlign: "center",
+                              padding: "5px 15px",
+                              color: "#2b2b31",
+                            }}
+                          >
+                            {d.display}
+                          </p>
+                        </a>
+                      </li>
+                    ))}
                   </ul>
                 </div>
+
+                {/* ── Danh sách phim theo ngày ── */}
                 <div className="tab-content" id="pills-tabContent">
-                  {/* Nội dung các tab ở đây - giữ nguyên HTML bên trong */}
-                  <div
-                    className="tab-pane fade show active"
-                    id="pills-popular-0"
-                    role="tabpanel"
-                    aria-labelledby="pills-popular-tab-0"
-                  >
-                    <div className="tab-movies movie-list-box">
-                      <div class="single-movie-list">
-                        <div class="single-movie-list-left col-lg-3 col-md-4 col-sm-12">
-                          <a href="/film/ai-thuong-ai-men-t16/1f628e48-468b-4c2e-b5e0-6291a89e7163.html">
-                            <img
-                              src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/Poster2024/Ai-thuong-ai-men.jpg"
-                              alt="top movie"
-                            />
-                          </a>
-                        </div>
-                        <div class="single-movie-list-right  col-lg-9 col-md-8 col-sm-12">
-                          <h3>
-                            <a href="/film/ai-thuong-ai-men-t16/1f628e48-468b-4c2e-b5e0-6291a89e7163.html">
-                              AI THƯƠNG AI MẾN (T16)
-                            </a>
-                          </h3>
-                          <ul>
-                            <li class="rating">2D</li>
-                            <li class="rating">T16</li>
-                          </ul>
-                          <p class="list-genre">Gia Đ&#236;nh, H&#224;i</p>
-
-                          <div class="movie-list-info">
-                            <p>
-                              Đạo diễn: <span>Thu Trang</span>
-                            </p>
-                            <p>
-                              Diễn vi&#234;n:{" "}
-                              <span>
-                                Ngọc Thu&#226;̣n, Thu Trang, Tr&#226;m Anh, Võ
-                                Đi&#234;̀n Gia Huy, Khả Như, La Thành, Trương
-                                Minh Thảo, Tiến Luật và m&#244;̣t s&#244;́
-                                di&#234;̃n vi&#234;n khác
-                              </span>
-                            </p>
-                            <p>&nbsp;</p>
-                            <span>
-                              Lấy bối cảnh miền T&#226;y s&#244;ng nước, Ai
-                              Thương Ai Mến xoay quanh Hai Mến — người phụ nữ
-                              mất cha mẹ, một m&#236;nh gồng g&#225;nh gia
-                              đ&#236;nh giữa nợ nần v&#224; những bi kị...
-                            </span>
-                          </div>
-
-                          <div
-                            className="col-md-12 col-sm-12"
-                            style={{ padding: 0 }}
-                          >
-                            <hr class="space-1" />
-                            <span
-                              className="time past item"
-                              style={{
-                                display: "inline-flex",
-                                marginBottom: "10px",
-                              }}
-                            >
-                              12:40
-                            </span>
-
-                            <a
-                              href="/chon-ghe"
-                              style={{
-                                display: "inline-flex",
-                                marginBottom: "10px",
-                              }}
-                            >
-                              <span className="time item">23:05</span>
-                            </a>
-
-                            <hr class="space-1" />
-                            <img
-                              src="https://starlight.vn/Areas/Admin/Content/Fileuploads/images/goldclass.png"
-                              style={{
-                                width: "150px",
-                                height: "auto",
-                                clear: "both",
-                              }}
-                            />
-                            <hr class="space-1" />
-                            <span
-                              class="time past item"
-                              style={{
-                                display: "inline-flex",
-                                marginBottom: "10px",
-                              }}
-                            >
-                              17:10
-                            </span>
-                          </div>
-                        </div>
-                        <div class="top-action"></div>
+                  <div className="tab-pane fade show active" role="tabpanel">
+                    {/* Loading */}
+                    {loading ? (
+                      <div style={{ textAlign: "center", padding: "50px 0" }}>
+                        <i
+                          className="fa fa-spinner fa-spin"
+                          style={{ fontSize: "36px", color: "#f37737" }}
+                        />
+                        <p style={{ marginTop: "12px", color: "#666" }}>
+                          Đang tải lịch chiếu...
+                        </p>
                       </div>
-                    </div>
+                    ) : movies.length === 0 ? (
+                      /* Không có lịch chiếu */
+                      <div style={{ textAlign: "center", padding: "50px 0" }}>
+                        <i
+                          className="fa fa-film"
+                          style={{ fontSize: "48px", color: "#ccc" }}
+                        />
+                        <p
+                          style={{
+                            marginTop: "12px",
+                            color: "#999",
+                            fontSize: "16px",
+                          }}
+                        >
+                          Không có lịch chiếu cho ngày này
+                        </p>
+                      </div>
+                    ) : (
+                      /* Danh sách phim */
+                      <div className="tab-movies movie-list-box">
+                        {movies.map((movie) => {
+                          const showtimeList = Array.isArray(movie.showtimes)
+                            ? movie.showtimes
+                            : [];
+
+                          const roomGroups = showtimeList.reduce((acc, st) => {
+                            const key = `${st.Room || "Phòng"}||${
+                              st.RoomType || "2D"
+                            }`;
+                            if (!acc[key]) acc[key] = [];
+                            acc[key].push(st);
+                            return acc;
+                          }, {});
+
+                          return (
+                            <div
+                              className="single-movie-list"
+                              key={movie.MovieId}
+                            >
+                              {/* Poster phim */}
+                              <div className="single-movie-list-left col-lg-3 col-md-4 col-sm-12">
+                                <a href={`/phim/${movie.MovieId}`}>
+                                  <img
+                                    src={movie.PosterUrl}
+                                    alt={movie.Title}
+                                    onError={(e) => {
+                                      e.target.src =
+                                        "/assets/images/default-poster.jpg";
+                                    }}
+                                  />
+                                </a>
+                              </div>
+
+                              {/* Thông tin + suất chiếu */}
+                              {/* Thông tin + suất chiếu */}
+                              <div className="single-movie-list-right col-lg-9 col-md-8 col-sm-12">
+                                <h3>
+                                  <a href={`/phim/${movie.MovieId}`}>
+                                    {movie.Title}
+                                  </a>
+                                </h3>
+                                <ul>
+                                  <li className="rating">2D</li>
+                                </ul>
+
+                                {/* Thời lượng */}
+                                <p className="list-genre">
+                                  Thời lượng: {movie.Duration} phút
+                                </p>
+
+                                {/* Đạo diễn */}
+                                {Array.isArray(movie.Directors) &&
+                                  movie.Directors.length > 0 && (
+                                    <p className="list-genre">
+                                      <strong>Đạo diễn: </strong>
+                                      {movie.Directors.join(", ")}
+                                    </p>
+                                  )}
+
+                                {/* Diễn viên */}
+                                {Array.isArray(movie.Actors) &&
+                                  movie.Actors.length > 0 && (
+                                    <p className="list-genre">
+                                      <strong>Diễn viên: </strong>
+                                      {movie.Actors.join(", ")}
+                                    </p>
+                                  )}
+
+                                {/* Mô tả phim - giới hạn 2 dòng */}
+                                {movie.Description && (
+                                  <p
+                                    className="list-genre"
+                                    style={{
+                                      display: "-webkit-box",
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: "vertical",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {movie.Description}
+                                  </p>
+                                )}
+
+                                <div
+                                  className="col-md-12 col-sm-12"
+                                  style={{ padding: 0 }}
+                                >
+                                  <hr className="space-1" />
+
+                                  {Object.entries(roomGroups).map(
+                                    ([key, sts]) => {
+                                      const [roomName, roomType] =
+                                        key.split("||");
+                                      return (
+                                        <div
+                                          key={key}
+                                          style={{ marginBottom: "12px" }}
+                                        >
+                                          {/* Label phòng */}
+                                          <p
+                                            style={{
+                                              color: "#555",
+                                              fontWeight: 600,
+                                              marginBottom: "8px",
+                                              fontSize: "13px",
+                                            }}
+                                          >
+                                            🎬 {roomName}{" "}
+                                            <span
+                                              style={{
+                                                color: "#f37737",
+                                                fontWeight: 400,
+                                              }}
+                                            >
+                                              ({roomType})
+                                            </span>
+                                          </p>
+
+                                          {/* Các suất chiếu */}
+                                          {sts.map((st) => {
+                                            const past = isShowtimePast(
+                                              selectedDate,
+                                              st.StartTime
+                                            );
+                                            const priceLabel = st.Price
+                                              ? `${Number(
+                                                  st.Price
+                                                ).toLocaleString("vi-VN")} đ`
+                                              : "";
+
+                                            return past ? (
+                                              <span
+                                                key={st.ShowtimeId}
+                                                className="time past item"
+                                                style={{
+                                                  display: "inline-flex",
+                                                  marginBottom: "10px",
+                                                  marginRight: "8px",
+                                                  opacity: 0.5,
+                                                  cursor: "not-allowed",
+                                                }}
+                                                title={priceLabel}
+                                              >
+                                                {st.StartTime}
+                                              </span>
+                                            ) : (
+                                              <a
+                                                key={st.ShowtimeId}
+                                                href={`/chon-ghe/${st.ShowtimeId}`}
+                                                style={{
+                                                  display: "inline-flex",
+                                                  marginBottom: "10px",
+                                                  marginRight: "8px",
+                                                }}
+                                                title={priceLabel}
+                                              >
+                                                <span className="time item">
+                                                  {st.StartTime}
+                                                </span>
+                                              </a>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    }
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="top-action"></div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -366,4 +434,4 @@ function KhuyenMaiDetail() {
   );
 }
 
-export default KhuyenMaiDetail;
+export default LichChieuDetail;

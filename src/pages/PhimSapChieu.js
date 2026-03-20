@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MovieApi from "../api/MovieApi";
 
 function PhimSapChieu() {
@@ -6,6 +7,8 @@ function PhimSapChieu() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState("");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchComingSoonMovies();
@@ -15,7 +18,7 @@ function PhimSapChieu() {
     try {
       setLoading(true);
       const result = await MovieApi.getComingSoonMovies(10);
-      
+
       if (result.success) {
         setMovies(result.data);
       } else {
@@ -26,6 +29,13 @@ function PhimSapChieu() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /* ─── Điều hướng sang trang chi tiết phim ──────────────────── */
+  const handleGoToDetail = (movie) => {
+    const movieId = movie.MovieId || movie.MovieID || movie.movieId || movie.id;
+    const slug = movie.Slug || movie.slug || movieId;
+    navigate(`/chi-tiet-phim/${slug}`, { state: { movie } });
   };
 
   useEffect(() => {
@@ -57,15 +67,15 @@ function PhimSapChieu() {
   // Chuyển đổi URL YouTube thành embed URL
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return "";
-    
+
     // Nếu là YouTube ID thuần
     if (!url.includes("http")) {
       return `https://www.youtube.com/embed/${url}?autoplay=1`;
     }
-    
+
     // Xử lý các dạng URL YouTube khác
     let videoId = "";
-    
+
     if (url.includes("youtube.com/watch?v=")) {
       videoId = url.split("v=")[1]?.split("&")[0];
     } else if (url.includes("youtu.be/")) {
@@ -73,7 +83,7 @@ function PhimSapChieu() {
     } else if (url.includes("youtube.com/embed/")) {
       videoId = url.split("embed/")[1]?.split("?")[0];
     }
-    
+
     return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : "";
   };
 
@@ -81,13 +91,13 @@ function PhimSapChieu() {
   const handlePlayTrailer = (e, trailerUrl) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const embedUrl = getYouTubeEmbedUrl(trailerUrl);
     if (embedUrl) {
       setSelectedTrailer(embedUrl);
       setShowModal(true);
       // Ngăn scroll khi modal mở
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     }
   };
 
@@ -96,7 +106,7 @@ function PhimSapChieu() {
     setShowModal(false);
     setSelectedTrailer("");
     // Cho phép scroll lại
-    document.body.style.overflow = 'auto';
+    document.body.style.overflow = "auto";
   };
 
   if (loading) {
@@ -182,7 +192,9 @@ function PhimSapChieu() {
                           <a
                             className="play-video"
                             href="#"
-                            onClick={(e) => handlePlayTrailer(e, movie.TrailerUrl)}
+                            onClick={(e) =>
+                              handlePlayTrailer(e, movie.TrailerUrl)
+                            }
                           >
                             <i className="fa fa-play"></i>
                           </a>
@@ -199,9 +211,14 @@ function PhimSapChieu() {
                       </div>
                     </div>
                     <div className="top-movie-details">
-                      <h4>
-                        <a href={`/movie/${movie.MovieId}`}>{movie.Title}</a>
+                      <h4
+                        className="entry-title"
+                        style={{ cursor: "pointer", color: "white" }}
+                        onClick={() => handleGoToDetail(movie)}
+                      >
+                        {movie.Title}
                       </h4>
+
                       {movie.Rated && (
                         <span className="movie-rated">({movie.Rated})</span>
                       )}
@@ -216,15 +233,12 @@ function PhimSapChieu() {
 
       {/* Modal Trailer YouTube */}
       {showModal && (
-        <div 
-          className="trailer-modal-overlay"
-          onClick={handleCloseModal}
-        >
-          <div className="trailer-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="trailer-modal-close"
-              onClick={handleCloseModal}
-            >
+        <div className="trailer-modal-overlay" onClick={handleCloseModal}>
+          <div
+            className="trailer-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="trailer-modal-close" onClick={handleCloseModal}>
               <i className="fa fa-times"></i>
             </button>
             <div className="trailer-video-wrapper">

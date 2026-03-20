@@ -122,7 +122,7 @@ const LichChieu = () => {
                     className="single-news-item col-lg-6 col-md-6 col-sm-12" 
                     style={{ padding: "10px" }}
                   >
-                    <a href={`/lich-chieu-detail`}>
+                   <a href={`/lich-chieu-detail/${cinema.CinemaId}`}>
                     {/* <a href={`/lich-chieu-detail/${cinema.CinemaId}`}> */}
 
                       <div className="news-image">

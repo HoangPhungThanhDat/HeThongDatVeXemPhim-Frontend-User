@@ -68,7 +68,27 @@ const CinemaApi = {
         }
     },
 
-   
+    // ✅ MỚI: Lấy lịch chiếu theo rạp và ngày
+    getShowtimes: async (cinemaId, date) => {
+        try {
+            const response = await axiosClient.get(`/cinemas/${cinemaId}/showtimes`, {
+                params: { date } // ?date=YYYY-MM-DD
+            });
+
+            return {
+                success: true,
+                data: response.data,  // { cinemaId, date, movies: [...] }
+                message: 'Lấy lịch chiếu thành công'
+            };
+        } catch (error) {
+            console.error('❌ Error getShowtimes:', error);
+            return {
+                success: false,
+                data: { movies: [] },
+                message: error.response?.data?.message || error.message
+            };
+        }
+    },
 };
 
 export default CinemaApi;
