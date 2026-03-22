@@ -254,11 +254,11 @@ export default function AdminRoutes() {
       <Route path="/tin-tuc/:slug" element={<TinTucDetailWithLoader />} />
       <Route path="/lich-chieu-detail" element={<LichChieuDetailWithLoader />} />
       <Route path="/thong-tin-ca-nhan" element={<ThongTinCaNhanWithLoader />} />
-      <Route path="/chon-ghe" element={<ChonGheWithLoader />} />
+     
       <Route path="/cap-nhat-tai-khoan" element={<CapNhatTaiKhoanWithLoader />} />
       <Route path="/cap-nhat-mat-khau" element={<CapNhatMatKhauWithLoader />} />
       <Route path="/chi-tiet-phim/:slugOrId" element={<ChiTietPhimWithLoader />} />
-     
+      <Route path="/chon-ghe/:showtimeId" element={<ChonGheWithLoader />} />
       <Route path="/lich-chieu-detail/:cinemaId" element={<LichChieuDetail />} />
     </Routes>
   );
