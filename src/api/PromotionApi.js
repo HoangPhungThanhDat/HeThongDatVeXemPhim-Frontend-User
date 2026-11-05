@@ -1,9 +1,9 @@
-import axiosClient from "./axiosClient";
+import axiosClient from './axiosClient';
 
 const promotionApi = {
   // Lấy tất cả khuyến mãi
   getAll: () => {
-    const url = "/promotions";
+    const url = '/promotions';
     return axiosClient.get(url);
   },
 

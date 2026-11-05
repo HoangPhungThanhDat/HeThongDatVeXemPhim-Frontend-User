@@ -1,0 +1,334 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import MovieApi from '../../../api/movieApi';
+import { useNavigate } from 'react-router-dom';
+
+function PhimSapChieu() {
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTrailer, setSelectedTrailer] = useState('');
+  const carouselRef = useRef(null);
+  const owlInstanceRef = useRef(null);
+  const navigate = useNavigate();
+
+  // ─── TanStack Query: tự refetch khi focus cửa sổ ───
+  const { data: movies = [] } = useQuery({
+    queryKey: ['phim', 'sap-chieu', 'trang-chu'],
+    queryFn: async () => {
+      const result = await MovieApi.getComingSoonMovies(10);
+      if (!result.success) throw new Error(result.message || 'Lỗi tải phim sắp chiếu');
+      return result.data;
+    },
+    placeholderData: (prev) => prev,
+  });
+
+  // Cleanup carousel khi unmount
+  useEffect(() => {
+    return () => {
+      if (owlInstanceRef.current && window.$) {
+        try {
+          window.$(carouselRef.current).owlCarousel('destroy');
+          owlInstanceRef.current = null;
+        } catch (e) {
+          console.log('Cleanup error:', e);
+        }
+      }
+    };
+  }, []);
+
+  /* ─── Điều hướng sang trang chi tiết phim ──────────────────── */
+  const handleGoToDetail = (movie) => {
+    const movieId = movie.MovieId || movie.MovieID || movie.movieId || movie.id;
+    const slug = movie.Slug || movie.slug || movieId;
+    navigate(`/chi-tiet-phim/${slug}`, { state: { movie } });
+  };
+
+  // Khởi tạo owlCarousel khi có dữ liệu
+  useEffect(() => {
+    if (movies.length > 0 && carouselRef.current && window.$ && window.$.fn.owlCarousel) {
+      if (!owlInstanceRef.current) {
+        const timer = setTimeout(() => {
+          const $carousel = window.$(carouselRef.current);
+
+          if (!$carousel.hasClass('owl-loaded')) {
+            owlInstanceRef.current = $carousel.owlCarousel({
+              loop: true,
+              margin: 10,
+              nav: true,
+              dots: false,
+              autoplay: true,
+              autoplayTimeout: 3000,
+              navText: ["<i class='fa fa-angle-left'></i>", "<i class='fa fa-angle-right'></i>"],
+              responsive: {
+                0: { items: 1 },
+                600: { items: 3 },
+                1000: { items: 5 },
+              },
+            });
+          }
+        }, 100);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [movies]);
+
+  // Chuyển đổi URL YouTube thành embed URL
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url) return '';
+
+    if (!url.includes('http')) {
+      return `https://www.youtube.com/embed/${url}?autoplay=1`;
+    }
+
+    let videoId = '';
+
+    if (url.includes('youtube.com/watch?v=')) {
+      videoId = url.split('v=')[1]?.split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    } else if (url.includes('youtube.com/embed/')) {
+      videoId = url.split('embed/')[1]?.split('?')[0];
+    }
+
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : '';
+  };
+
+  // Mở modal với trailer
+  const handlePlayTrailer = (e, trailerUrl) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const embedUrl = getYouTubeEmbedUrl(trailerUrl);
+    if (embedUrl) {
+      setSelectedTrailer(embedUrl);
+      setShowModal(true);
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  // Đóng modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedTrailer('');
+    document.body.style.overflow = 'auto';
+  };
+
+  return (
+    <div>
+      {/* <!-- Top phim mới  --> */}
+      <section className="filmoja-top-movies-area section_30">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="filmoja-heading">
+                <h2>
+                  Phim:<span> Sắp Chiếu </span>
+                </h2>
+              </div>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-md-12">
+              {movies.length === 0 ? (
+                <div className="text-center" style={{ padding: '50px 0' }}>
+                  <i className="fa fa-spinner fa-spin" style={{ fontSize: '40px' }}></i>
+                  <p>Đang tải phim sắp chiếu...</p>
+                </div>
+              ) : (
+                <div ref={carouselRef} className="top-movie-slider owl-carousel">
+                  {movies.map((movie) => (
+                    <div key={movie.MovieId} className="single-top-movie">
+                      <div className="top-movie-wrap">
+                        <div className="top-movie-img">
+                          <a href={`/film/${movie.Slug}/${movie.MovieId}.html`}>
+                            <img src={movie.PosterUrl} alt={movie.Slug} />
+                          </a>
+                          <div className="movie-badge">
+                            <span className="badge-coming-soon">Sắp chiếu</span>
+                          </div>
+                        </div>
+                        <div className="thumb-hover">
+                          {movie.TrailerUrl && (
+                            <a
+                              className="play-video"
+                              href="#"
+                              onClick={(e) => handlePlayTrailer(e, movie.TrailerUrl)}
+                            >
+                              <i className="fa fa-play"></i>
+                            </a>
+                          )}
+                          <div className="thumb-date"></div>
+                        </div>
+                      </div>
+                      <div className="top-movie-details">
+                        <h4
+                          className="entry-title"
+                          style={{ cursor: 'pointer', color: 'white' }}
+                          onClick={() => handleGoToDetail(movie)}
+                        >
+                          {movie.Title}
+                        </h4>
+                        {movie.ReleaseDate && (
+                          <p style={{ color: '#ffd700', fontSize: '13px', marginTop: '5px' }}>
+                            <i className="fa fa-calendar" style={{ marginRight: '5px' }}></i>
+                            {new Date(movie.ReleaseDate).toLocaleDateString('vi-VN')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Modal Trailer YouTube */}
+      {showModal && (
+        <div className="trailer-modal-overlay" onClick={handleCloseModal}>
+          <div className="trailer-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="trailer-modal-close" onClick={handleCloseModal}>
+              <i className="fa fa-times"></i>
+            </button>
+            <div className="trailer-video-wrapper">
+              <iframe
+                src={selectedTrailer}
+                title="Movie Trailer"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ĐÃ SỬA: bỏ chữ "jsx" trong thẻ style để hết warning */}
+      <style>{`
+        .trailer-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .trailer-modal-content {
+          position: relative;
+          width: 90%;
+          max-width: 1200px;
+          animation: slideUp 0.3s ease-in-out;
+        }
+
+        @keyframes slideUp {
+          from {
+            transform: translateY(50px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .trailer-modal-close {
+          position: absolute;
+          top: -40px;
+          right: 0;
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 30px;
+          cursor: pointer;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          z-index: 10000;
+        }
+
+        .trailer-modal-close:hover {
+          color: #ff0000;
+          transform: rotate(90deg);
+        }
+
+        .trailer-video-wrapper {
+          position: relative;
+          padding-bottom: 56.25%;
+          height: 0;
+          overflow: hidden;
+          background: #000;
+          border-radius: 8px;
+        }
+
+        .trailer-video-wrapper iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 8px;
+        }
+
+        .top-movie-img { position: relative; }
+
+        .movie-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 10;
+        }
+
+        .badge-coming-soon {
+          display: inline-block;
+          padding: 5px 12px;
+          background: linear-gradient(135deg, #ff6b35, #ff2d2d);
+          color: #fff;
+          font-size: 12px;
+          font-weight: bold;
+          border-radius: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 2px 8px rgba(255, 45, 45, 0.4);
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+          .trailer-modal-content { width: 95%; }
+          .trailer-modal-close {
+            top: -35px;
+            font-size: 25px;
+            width: 35px;
+            height: 35px;
+          }
+          .badge-coming-soon {
+            font-size: 10px;
+            padding: 3px 8px;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export default PhimSapChieu;

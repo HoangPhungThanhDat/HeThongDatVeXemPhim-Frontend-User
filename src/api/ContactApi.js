@@ -1,7 +1,6 @@
-// src/api/ContactApi.js
 import axiosClient from './axiosClient';
 
-const ContactApi = {
+const contactApi = {
   // Lấy tất cả liên hệ
   getAll: () => axiosClient.get('/contacts'),
 
@@ -18,4 +17,4 @@ const ContactApi = {
   delete: (id) => axiosClient.delete(`/contacts/${id}`),
 };
 
-export default ContactApi;
+export default contactApi;

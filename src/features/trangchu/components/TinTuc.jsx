@@ -1,0 +1,174 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import NewsApi from '../../../api/newsApi';
+// ⚠️ Nếu bạn có ảnh fallback riêng, thay đường dẫn này cho đúng
+import tintuc1 from '../../../assets/images/backgrounds/bgs2.jpg';
+
+function TinTuc() {
+  // ─── TanStack Query: tự refetch khi focus cửa sổ ───
+  const {
+    data: news = [],
+    isLoading: loading,
+  } = useQuery({
+    queryKey: ['tin-tuc', 'trang-chu'],
+    queryFn: async () => {
+      const result = await NewsApi.getPublishedNews(6); // 6 bài mới nhất
+      if (!result.success) {
+        throw new Error(result.message || 'Không tải được tin tức');
+      }
+      return result.data;
+    },
+    placeholderData: (prev) => prev,
+  });
+
+  // Hàm cắt ngắn nội dung
+  const truncateContent = (content, maxLength = 150) => {
+    if (!content) return '';
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  };
+
+  // Hàm format ngày
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <section className="filmoja-news-area section_70">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="filmoja-heading">
+                <h2>Tin Điện Ảnh</h2>
+              </div>
+            </div>
+          </div>
+          <div className="row">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="col-lg-4 col-md-6 col-sm-12">
+                <div className="news-side-list">
+                  <div className="single-news-side">
+                    <div
+                      className="news-side-img"
+                      style={{
+                        background: '#e0e0e0',
+                        height: '200px',
+                        animation: 'pulse 1.5s infinite',
+                      }}
+                    ></div>
+                    <div className="news-side-text">
+                      <div
+                        style={{
+                          background: '#e0e0e0',
+                          height: '20px',
+                          marginBottom: '10px',
+                          animation: 'pulse 1.5s infinite',
+                        }}
+                      ></div>
+                      <div
+                        style={{
+                          background: '#e0e0e0',
+                          height: '15px',
+                          width: '60%',
+                          animation: 'pulse 1.5s infinite',
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Nếu không có tin tức
+  if (news.length === 0) {
+    return (
+      <section className="filmoja-news-area section_70">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="filmoja-heading">
+                <h2>Tin Điện Ảnh</h2>
+              </div>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-12 py-5 text-center">
+              <i className="fa fa-newspaper" style={{ fontSize: '48px', color: '#ccc' }}></i>
+              <p className="text-muted mt-3">Chưa có tin tức nào</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div>
+      <section className="filmoja-news-area section_70">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="filmoja-heading">
+                <h2>Tin Điện Ảnh</h2>
+              </div>
+            </div>
+          </div>
+          <div className="row">
+            {news.map((article) => (
+              <div key={article.NewsId} className="col-lg-4 col-md-6 col-sm-12">
+                <div className="news-side-list">
+                  <div className="single-news-side">
+                    <div className="news-side-img">
+                      <Link to={`/tin-tuc/${article.Slug}`}>
+                        <img
+                          src={article.ImageUrl || tintuc1}
+                          alt={article.Slug}
+                          onError={(e) => {
+                            e.target.src = tintuc1; // Fallback image
+                          }}
+                        />
+                      </Link>
+                    </div>
+                    <div className="news-side-text">
+                      <h4>
+                        <Link to={`/tin-tuc/${article.Slug}`}>{article.Title}</Link>
+                      </h4>
+                      <div className="post-meta">
+                        <p>
+                          <a href="#">
+                            <i className="fa fa-user"></i>admin
+                          </a>
+                        </p>
+                        <p>
+                          <a href="#">
+                            <i className="fa fa-tags"></i>
+                            {formatDate(article.CreatedAt)}
+                          </a>
+                        </p>
+                      </div>
+                      <div className="post-content">
+                        <p>{truncateContent(article.Content)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default TinTuc;

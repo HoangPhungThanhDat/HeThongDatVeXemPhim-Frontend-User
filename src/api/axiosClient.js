@@ -1,18 +1,23 @@
-import axios from "axios";
+import axios from 'axios';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost/api';
 
 const axiosClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api', 
-  timeout: 10000,
+  baseURL: API_BASE,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
+    Accept: 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
+  withCredentials: true, // Bắt buộc để nhận HttpOnly cookie
 });
 
-// Request interceptor - thêm token
+// Request: Gắn Bearer token
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
-    if (token) {
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -20,48 +25,64 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - chỉ 1 cái thôi
+// Response: Tự động refresh khi 401
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
+  failedQueue = [];
+};
+
+const PUBLIC_ROUTES = ['/login', '/register', '/auth/refresh', '/auth/google', '/contacts'];
+const isPublicRoute = (url = '') => PUBLIC_ROUTES.some((r) => url.includes(r));
+
+const forceLogout = () => {
+  ['access_token', 'token', 'role', 'fullname', 'UserId', 'email', 'phone', 'user'].forEach((k) => localStorage.removeItem(k));
+  if (!window.location.pathname.includes('dang-nhap')) {
+    window.location.href = '/dang-nhap';
+  }
+};
+
 axiosClient.interceptors.response.use(
   (response) => response.data,
-  (error) => {
-    if (error.response) {
-      const { status } = error.response;
-      const url = error.config?.url || "";
+  async (error) => {
+    const originalRequest = error.config || {};
+    const status = error.response?.status;
+    const url = originalRequest.url || '';
 
-      // Chỉ redirect về login khi 401 VÀ route cần auth
-      // Các route public như /contacts không cần redirect
-      const publicRoutes = ["/contacts"];
-      const isPublicRoute = publicRoutes.some((route) => url.includes(route));
-
-      if (status === 401 && !isPublicRoute) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("fullname");
-        localStorage.removeItem("UserId");
-        window.location.href = "http://localhost:3003";
-        return new Promise(() => {}); // Dừng xử lý tiếp
+    if (status === 401 && !originalRequest._retry && !isPublicRoute(url)) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(() => axiosClient(originalRequest)).catch((e) => Promise.reject(e));
       }
 
-      switch (status) {
-        case 403:
-          console.error('Bạn không có quyền truy cập');
-          break;
-        case 404:
-          console.error('Không tìm thấy dữ liệu');
-          break;
-        case 500:
-          console.error('Lỗi server');
-          break;
-        default:
-          console.error('Có lỗi xảy ra:', error.response.data?.message);
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshRes = await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
+        const payload = refreshRes.data?.data ?? refreshRes.data;
+        const newToken = payload?.access_token || payload?.token;
+        if (!newToken) throw new Error('Refresh failed');
+
+        localStorage.setItem('access_token', newToken);
+        localStorage.setItem('token', newToken);
+        axiosClient.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+        processQueue(null, newToken);
+        return axiosClient(originalRequest);
+      } catch (e) {
+        processQueue(e, null);
+        forceLogout();
+        return Promise.reject(e);
+      } finally {
+        isRefreshing = false;
       }
-    } else if (error.request) {
-      console.error('Không thể kết nối đến server');
-    } else {
-      console.error('Lỗi:', error.message);
     }
-
     return Promise.reject(error);
   }
 );

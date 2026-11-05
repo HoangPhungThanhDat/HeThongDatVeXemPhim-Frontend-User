@@ -9,20 +9,20 @@ const BannerApi = {
           position: position,
           status: 'Active',
           sortBy: 'createdAt',
-          order: 'desc'
-        }
+          order: 'desc',
+        },
       });
-      
+
       return {
         success: true,
         data: response.data.banners || response.data,
-        message: 'Lấy dữ liệu banner thành công'
+        message: 'Lấy dữ liệu banner thành công',
       };
     } catch (error) {
       return {
         success: false,
         data: [],
-        message: error.response?.data?.message || error.message
+        message: error.response?.data?.message || error.message,
       };
     }
   },
@@ -31,17 +31,17 @@ const BannerApi = {
   getAllBanners: async () => {
     try {
       const response = await axiosClient.get('/banners');
-      
+
       return {
         success: true,
         data: response.data.banners || response.data,
-        message: 'Lấy tất cả banner thành công'
+        message: 'Lấy tất cả banner thành công',
       };
     } catch (error) {
       return {
         success: false,
         data: [],
-        message: error.response?.data?.message || error.message
+        message: error.response?.data?.message || error.message,
       };
     }
   },
@@ -50,22 +50,20 @@ const BannerApi = {
   getBannerById: async (bannerId) => {
     try {
       const response = await axiosClient.get(`/banners/${bannerId}`);
-      
+
       return {
         success: true,
         data: response.data.banner || response.data,
-        message: 'Lấy banner thành công'
+        message: 'Lấy banner thành công',
       };
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.response?.data?.message || error.message
+        message: error.response?.data?.message || error.message,
       };
     }
   },
-
- 
 };
 
 export default BannerApi;
