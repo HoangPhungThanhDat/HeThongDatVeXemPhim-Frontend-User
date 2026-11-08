@@ -27546,3 +27546,15 @@ to   { opacity: 1; transform: translateY(0); }
 .td-hero-content h1 { font-size: 22px; letter-spacing: 1px; }
 }
 
+
+
+
+/* Làm đậm chữ menu Desktop */
+.mainmenu nav > ul > li > a {
+  font-weight: 700 !important; /* 700 là độ đậm Bold */
+}
+
+/* (Tuỳ chọn) Làm đậm luôn cả submenu nếu bạn muốn */
+.mainmenu nav > ul > li > ul > li > a {
+  font-weight: 600 !important;
+}

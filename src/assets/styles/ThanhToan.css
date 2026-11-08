@@ -399,115 +399,119 @@
   margin-top: 4px;
 }
 
-/* ─── PAYMENT METHODS ────────────────────────────────────────────────────── */
-.ck-methods {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+/* ─── PAYMENT METHODS (FIXED CONFLICT) ───────────────────────────────────── */
+.ck .ck-methods {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  margin-bottom: 24px !important;
 }
 
-.ck-method {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--border);
-  background: var(--bg-card);
-  cursor: pointer;
-  font-family: var(--font);
-  text-align: left;
-  transition: var(--transition);
+.ck .ck-method {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important; /* Đẩy radio sang sát phải */
+  gap: 16px !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  width: 100% !important;
+  position: relative !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: all 0.3s ease !important;
 }
 
-.ck-method:hover {
-  border-color: #cbd5e1;
-  background: var(--bg-input);
+.ck .ck-method:hover {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
 }
 
-.ck-method.active {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  box-shadow: 0 0 0 4px rgba(249,115,22,0.06);
+.ck .ck-method.active {
+  border-color: #f97316 !important;
+  background: #fff7ed !important;
+  box-shadow: 0 0 0 4px rgba(249,115,22,0.06) !important;
 }
 
-.ck-method-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 800;
-  flex-shrink: 0;
-  overflow: hidden;
-  padding: 6px;
+/* Căn chỉnh Icon */
+.ck .ck-method-icon {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden !important;
+  padding: 4px !important;
 }
 
-.ck-method-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-  border-radius: 4px;
+.ck .ck-method-icon img,
+.ck .ck-method-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  margin: 0 !important;
 }
 
-.ck-method-image-fallback {
-  font-size: 18px;
-  font-weight: 800;
+/* Căn chỉnh Text */
+.ck .ck-method-info {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  margin: 0 !important;
 }
 
-.ck-method-info {
-  flex: 1;
+.ck .ck-method-label {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  margin: 0 0 4px 0 !important;
+  line-height: 1.2 !important;
 }
 
-.ck-method-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+.ck .ck-method-desc {
+  font-size: 13px !important;
+  color: #64748b !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
 }
 
-.ck-method-desc {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 1px;
+/* Căn chỉnh nút Radio tròn */
+.ck .ck-method-radio {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  border: 2px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition: all 0.3s ease !important;
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-.ck-method-radio {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: var(--transition);
+.ck .ck-method.active .ck-method-radio {
+  border-color: #f97316 !important;
 }
 
-.ck-method.active .ck-method-radio {
-  border-color: var(--accent);
-}
-
-.ck-method-radio-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: dot-pop 0.2s ease-out;
-}
-
-@keyframes dot-pop {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+.ck .ck-method-radio-dot {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background: #f97316 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  animation: dot-pop 0.2s ease-out !important;
 }
 
 /* ─── CARD FORM ──────────────────────────────────────────────────────────── */

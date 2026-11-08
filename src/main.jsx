@@ -16,7 +16,7 @@ import { TuyenDungPage } from './features/tuyendung';
 import { DangNhapPage, DangKyPage } from './features/auth';
 import { ChonGhePage, ChonComboPage, ThanhToanPage } from './features/datve';
 import { TrangCaNhanPage, DoiMatKhauPage, CapNhatTaiKhoanPage } from './features/nguoidung';
-
+import KetQuaThanhToanPage from './features/datve/pages/KetQuaThanhToanPage';
 import { queryClient } from './lib/queryClient';
 import './assets/styles/globals.css';
 
@@ -49,6 +49,7 @@ function App() {
             <Route path="/chon-ghe" element={<ChonGhePage />} />
             <Route path="/combo" element={<ChonComboPage />} />
             <Route path="/thanh-toan" element={<ThanhToanPage />} />
+            <Route path="/thanh-toan-ket-qua" element={<KetQuaThanhToanPage />} />
             {/* Thêm các route khác sau */}
           </Routes>
 

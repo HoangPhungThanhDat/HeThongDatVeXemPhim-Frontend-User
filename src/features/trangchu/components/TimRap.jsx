@@ -1,4 +1,4 @@
-// src/features/trangchu/components/TimRap.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import arrowDown from '../../../assets/images/icons/black-ar-down.png';
@@ -278,11 +278,29 @@ function TimRap() {
     return timeStr;
   };
 
+  // ─── Style chung cho Dropdown ──────────────────────────────────
+  const dropdownStyle = {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    backgroundColor: '#36373b',
+    borderRadius: '0 0 8px 8px',
+    maxHeight: '250px',
+    overflowY: 'auto',
+    marginTop: '4px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+    border: '1px solid #555',
+  };
+
   // ─── Render ────────────────────────────────────────────────────
   return (
-    <div>
+    
+    <div style={{ position: 'relative', zIndex: 100 }}>
       <div className="booking-form">
         <div className="col-lg-12 flex flex-wrap">
+          
           {/* ── Select Rạp ── */}
           <div
             className="booking-form-item"
@@ -314,22 +332,7 @@ function TimRap() {
 
             {/* Dropdown Rạp */}
             {isCinemaOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  zIndex: 9999,
-                  backgroundColor: '#36373b',
-                  borderRadius: '0 0 8px 8px',
-                  maxHeight: '250px',
-                  overflowY: 'auto',
-                  marginTop: '4px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  border: '1px solid #555',
-                }}
-              >
+              <div style={dropdownStyle}>
                 {loadingCinemas ? (
                   <div style={{ padding: '10px 15px', color: '#fff' }}>Đang tải...</div>
                 ) : cinemas.length === 0 ? (
@@ -402,22 +405,7 @@ function TimRap() {
 
             {/* Dropdown Phim */}
             {isMovieOpen && selectedCinema && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  zIndex: 9999,
-                  backgroundColor: '#36373b',
-                  borderRadius: '0 0 8px 8px',
-                  maxHeight: '250px',
-                  overflowY: 'auto',
-                  marginTop: '4px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  border: '1px solid #555',
-                }}
-              >
+              <div style={dropdownStyle}>
                 {loadingMovies ? (
                   <div style={{ padding: '10px 15px', color: '#fff' }}>Đang tải...</div>
                 ) : movies.length === 0 ? (
@@ -490,22 +478,7 @@ function TimRap() {
 
             {/* Dropdown Ngày */}
             {isDateOpen && selectedMovie && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  zIndex: 9999,
-                  backgroundColor: '#36373b',
-                  borderRadius: '0 0 8px 8px',
-                  maxHeight: '250px',
-                  overflowY: 'auto',
-                  marginTop: '4px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  border: '1px solid #555',
-                }}
-              >
+              <div style={dropdownStyle}>
                 {loadingDates ? (
                   <div style={{ padding: '10px 15px', color: '#fff' }}>Đang tải...</div>
                 ) : dates.length === 0 ? (
@@ -581,22 +554,7 @@ function TimRap() {
 
             {/* Dropdown Suất chiếu */}
             {isShowtimeOpen && selectedDate && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  zIndex: 9999,
-                  backgroundColor: '#36373b',
-                  borderRadius: '0 0 8px 8px',
-                  maxHeight: '250px',
-                  overflowY: 'auto',
-                  marginTop: '4px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  border: '1px solid #555',
-                }}
-              >
+              <div style={dropdownStyle}>
                 {loadingShowtimes ? (
                   <div style={{ padding: '10px 15px', color: '#fff' }}>Đang tải...</div>
                 ) : showtimes.length === 0 ? (
@@ -634,6 +592,7 @@ function TimRap() {
               </div>
             )}
           </div>
+          
         </div>
       </div>
     </div>

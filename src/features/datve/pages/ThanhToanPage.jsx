@@ -17,6 +17,7 @@ import {
   useBookingData,
 } from '../components/thanhtoan';
 
+import { thanhToanService } from '../../../services/thanhToanService';
 import '../../../assets/styles/ThanhToan.css';
 
 export default function ThanhToanPage() {
@@ -24,7 +25,7 @@ export default function ThanhToanPage() {
   const navigate = useNavigate();
 
   // Get booking data
-  const { booking, grandTotal, isValid } = useBookingData(location.state);
+  const { booking, grandTotal, isValid, showtimeId, selectedSeats } = useBookingData(location.state);
 
   // Timer
   const { timeLeft, resetTimer } = useTimer();
@@ -34,7 +35,7 @@ export default function ThanhToanPage() {
     usePaymentForm();
 
   // State
-  const [paymentMethod, setPaymentMethod] = useState('momo');
+  const [paymentMethod, setPaymentMethod] = useState('vnpay'); // Mặc định chọn VNPAY
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -46,32 +47,64 @@ export default function ThanhToanPage() {
   }, [isValid, navigate]);
 
   // Handle payment submission
-  const handleSubmit = () => {
-    const { isValid: formValid, errors: formErrors } = validate(paymentMethod);
+  const handleSubmit = async () => {
+    // 1. Validate form (Họ tên, SĐT, Email...)
+    const { isValid: formValid } = validate(paymentMethod);
     if (!formValid) return;
 
+    // 2. Kiểm tra dữ liệu ghế và suất chiếu
+    if (!showtimeId || !selectedSeats || selectedSeats.length === 0) {
+      alert('Không tìm thấy thông tin ghế hoặc suất chiếu. Vui lòng chọn lại!');
+      return;
+    }
+
     setLoading(true);
-    // TODO: Gọi API đặt vé
-    setTimeout(() => {
+
+    try {
+      // 3. Map ID ghế (Backend yêu cầu mảng các SeatId)
+      const seatIds = selectedSeats.map((seat) => seat.SeatId);
+      
+      // 4. Map dữ liệu Combo chuẩn xác từ ChonComboPage
+      // Dữ liệu từ ChonComboPage gửi sang có dạng: { itemId, name, size, qty, price }
+      const combos = (location.state?.snacks || []).map((snack) => ({
+        id: snack.itemId,     // Lấy đúng itemId
+        quantity: snack.qty,  // Lấy đúng qty
+        price: snack.price,   // Lấy đúng price
+      }));
+
+      // 5. Tạo Payload gửi xuống Backend
+      const payload = {
+        amount: grandTotal,
+        booking_info: {
+          ShowtimeId: parseInt(showtimeId),
+          seats: seatIds,
+          combos: combos,
+        },
+      };
+
+      // 6. Gọi API
+      const res = await thanhToanService.createPaymentUrl(payload);
+
+      // 7. Chuyển hướng sang VNPAY
+      if (res.status === 'success' && res.payment_url) {
+        window.location.href = res.payment_url;
+      } else {
+        alert('Có lỗi xảy ra khi tạo link thanh toán!');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Lỗi thanh toán:', error);
+      alert(error.response?.data?.message || 'Lỗi kết nối đến server!');
       setLoading(false);
-      setSuccess(true);
-    }, 2200);
+    }
   };
 
-  // Handle expired session
-  const handleExpired = () => {
-    // Show notification and allow refresh
-  };
-
-  // Go home
   const goHome = () => navigate('/');
 
-  // Success screen
   if (success) {
     return <SuccessScreen booking={booking} total={grandTotal} onHome={goHome} />;
   }
 
-  // Expired banner
   const showExpiredBanner = timeLeft === 0;
 
   return (
