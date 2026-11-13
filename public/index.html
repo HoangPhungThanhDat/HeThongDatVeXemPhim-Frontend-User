@@ -21,7 +21,12 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo192.png" />
-    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- 
+      🔴 ĐÃ COMMENT MANIFEST: Fix lỗi "Manifest: Line 1, column 1, Syntax error" 
+      (Nếu sau này làm PWA và có file manifest.json chuẩn, hãy mở comment dòng dưới)
+    -->
+    <!-- <link rel="manifest" href="/manifest.json" /> -->
     
     <!-- Google Fonts -->
     <link 
@@ -73,7 +78,12 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
-    <!-- OneSignal (nếu dùng) -->
+    <!-- 
+      🔴 ĐÃ COMMENT ONESIGNAL: Fix lỗi "This web push config can only be used on http://starlight.vn"
+      Vì bạn đang chạy ở localhost, OneSignal chặn không cho chạy. 
+      Khi nào deploy lên domain thật (starlight.vn), hãy mở comment đoạn script này ra.
+    -->
+    <!--
     <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
     <script>
       var OneSignal = window.OneSignal || [];
@@ -83,6 +93,7 @@
         });
       });
     </script>
+    -->
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

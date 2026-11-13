@@ -5,7 +5,6 @@ import axiosClient from '../../../api/axiosClient';
 export function useNguoiDung() {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
-  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -18,19 +17,23 @@ export function useNguoiDung() {
     }
 
     fetchUserInfo();
-    fetchTransactions();
-  }, []);
+  }, [navigate]); // Thêm navigate vào dependency array
 
   const fetchUserInfo = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const userId = localStorage.getItem('UserId');
-
-      const response = await axiosClient.get(`/users/${userId}`, {
+      
+      // Sử dụng endpoint /profile thay vì /users/{id} để bảo mật hơn (chỉ lấy được thông tin của chính mình)
+      // Hoặc giữ nguyên /users/{userId} nếu backend cho phép public
+      const response = await axiosClient.get(`/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUserInfo(response.data);
+      // Xử lý bóc tách data (tùy thuộc API trả về Resource hay bọc trong data)
+      const data = response.data.data || response.data;
+      setUserInfo(data);
     } catch (error) {
       console.error('Lỗi khi lấy thông tin user:', error);
 
@@ -45,32 +48,12 @@ export function useNguoiDung() {
     }
   };
 
-  const fetchTransactions = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('UserId');
-
-      const response = await axiosClient.get(`/users/${userId}/transactions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setTransactions(response.data || []);
-    } catch (error) {
-      console.error('Lỗi khi lấy lịch sử giao dịch:', error);
-      if (error.response?.status !== 404) {
-        setTransactions([]);
-      }
-    }
-  };
+  // ❌ ĐÃ XÓA hàm fetchTransactions vì đã chuyển sang dùng API /my-orders ở TrangCaNhanPage.jsx
 
   return {
     userInfo,
-    transactions,
     loading,
     error,
-    refetch: () => {
-      fetchUserInfo();
-      fetchTransactions();
-    },
+    refetch: fetchUserInfo,
   };
 }

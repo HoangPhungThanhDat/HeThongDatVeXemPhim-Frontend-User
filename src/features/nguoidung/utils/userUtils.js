@@ -3,15 +3,12 @@
 export const generateQRData = (userInfo) => {
   if (!userInfo) return '';
 
-  const qrData = {
-    name: userInfo.FullName,
-    phone: userInfo.PhoneNumber || 'N/A',
-    email: userInfo.Email,
-    address: userInfo.Address || 'N/A',
-    userId: userInfo.UserId,
-  };
-
-  return JSON.stringify(qrData);
+  // ✅ RÚT GỌN: Chỉ lấy ID và Số điện thoại (để tra cứu), bỏ tên/địa chỉ để QR không bị dày.
+  // Ví dụ trả về: "35|0559658221"
+  const userId = userInfo.UserId || '0';
+  const phone = userInfo.PhoneNumber || 'N/A';
+  
+  return `${userId}|${phone}`;
 };
 
 export const getUserDisplayName = (user) => {

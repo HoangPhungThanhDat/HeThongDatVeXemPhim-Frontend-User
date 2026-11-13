@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import confetti from 'canvas-confetti'; // Import thư viện pháo giấy
+import confetti from 'canvas-confetti';
+import axiosClient from '../../../api/axiosClient'; // Đảm bảo đường dẫn này đúng với cấu trúc thư mục của bạn
 
 export default function KetQuaThanhToanPage() {
   const location = useLocation();
@@ -10,20 +11,37 @@ export default function KetQuaThanhToanPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const responseCode = params.get('vnp_ResponseCode');
+    const txnRef = params.get('vnp_TxnRef');
 
-    if (responseCode === '00') {
-      setStatus('success');
-      triggerConfetti(); // Kích hoạt pháo giấy khi thành công
-    } else if (responseCode) {
-      setStatus('failed');
-    } else {
-      navigate('/');
-    }
+    // Hàm gọi API đồng bộ DB
+    const syncPaymentStatus = async () => {
+      if (responseCode === '00' && txnRef) {
+        try {
+          // Gọi backend để chốt đơn (đề phòng VNPAY gọi IPN không thành công)
+          await axiosClient.post('/payment/check-status', {
+            vnp_TxnRef: txnRef,
+            vnp_ResponseCode: responseCode
+          });
+          setStatus('success');
+          triggerConfetti();
+        } catch (error) {
+          console.error("Lỗi đồng bộ DB:", error);
+          // Dù lỗi đồng bộ thì vẫn hiển thị thành công cho khách vì VNPAY đã báo mã 00
+          setStatus('success'); 
+          triggerConfetti();
+        }
+      } else if (responseCode) {
+        setStatus('failed');
+      } else {
+        navigate('/');
+      }
+    };
+
+    syncPaymentStatus();
   }, [location, navigate]);
 
   // Hàm tạo hiệu ứng pháo giấy
   const triggerConfetti = () => {
-    // Đợt 1: Bắn từ 2 góc dưới màn hình lên
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
@@ -39,19 +57,16 @@ export default function KetQuaThanhToanPage() {
 
       const particleCount = 50 * (timeLeft / duration);
       
-      // Bắn từ góc trái
       confetti({
         ...defaults, particleCount,
         origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
       });
-      // Bắn từ góc phải
       confetti({
         ...defaults, particleCount,
         origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
       });
     }, 250);
 
-    // Đợt 2: Bắn một quả đại bác từ trên xuống
     setTimeout(() => {
       confetti({
         particleCount: 150,

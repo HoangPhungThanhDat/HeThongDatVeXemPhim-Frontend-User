@@ -1,4 +1,4 @@
-// src/features/nguoidung/components/CapNhatTaiKhoan/CapNhatTaiKhoanForm.jsx
+
 
 import React from 'react';
 import FormInput from './FormInput';

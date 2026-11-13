@@ -9,10 +9,7 @@ const movieApi = {
    */
   getNowShowing: async () => {
     try {
-      console.log('🔄 Calling: /movies/now-showing/all');
       const response = await axiosClient.get('/movies/now-showing/all');
-      console.log('📥 Full Response:', response);
-      console.log('📥 Response Data:', response.data);
       const movies = Array.isArray(response.data) ? response.data : [];
       return {
         success: true,
@@ -21,7 +18,6 @@ const movieApi = {
         message: 'Lấy dữ liệu thành công',
       };
     } catch (error) {
-      console.error('❌ getNowShowing Error:', error);
       return {
         success: false,
         data: [],
@@ -37,9 +33,7 @@ const movieApi = {
    */
   getComingSoonMovies: async (limit = 10) => {
     try {
-      console.log('🔄 Calling: /movies/coming-soon');
       const response = await axiosClient.get('/movies/coming-soon');
-      console.log('📥 Response:', response.data);
       const movies = Array.isArray(response.data) ? response.data : [];
       return {
         success: true,
@@ -48,7 +42,6 @@ const movieApi = {
         message: 'Lấy phim sắp chiếu thành công',
       };
     } catch (error) {
-      console.error('❌ getComingSoonMovies Error:', error);
       return {
         success: false,
         data: [],
@@ -74,7 +67,6 @@ const movieApi = {
         message: 'Lấy phim mới nhất thành công',
       };
     } catch (error) {
-      console.error('❌ getLatestMovies Error:', error);
       return {
         success: false,
         data: [],
@@ -85,44 +77,17 @@ const movieApi = {
 
   /**
    * ✅ Lấy chi tiết phim
-   * Endpoint: GET /movies/{id}/detail  (nhận cả ID số lẫn slug)
-   *
-   * ⚠️ FIX: Nếu backend chỉ nhận ID số, cần sửa Laravel route thành:
-   *    Route::get('/movies/{movie}/detail', ...)  với {movie} dùng RouteModelBinding
-   *    hoặc cho phép tìm theo slug trong controller.
-   *
-   * Hiện tại đang truyền slugOrId từ URL params, ví dụ: "avata-3" hoặc "5"
+   * Endpoint: GET /movies/{id}/detail (nhận cả ID số lẫn slug)
    */
-  // getMovieDetail: async (slugOrId) => {
-  //   try {
-  //     console.log(`🔄 Calling: /movies/${slugOrId}/detail`);
-  //     const response = await axiosClient.get(`/movies/${slugOrId}/detail`);
-  //     return {
-  //       success: true,
-  //       data: response.data,
-  //       message: "Lấy chi tiết phim thành công",
-  //     };
-  //   } catch (error) {
-  //     console.error("❌ getMovieDetail Error:", error);
-  //     return {
-  //       success: false,
-  //       data: null,
-  //       message: error.response?.data?.message || error.message,
-  //     };
-  //   }
-  // },
-  // getMovieDetail
   getMovieDetail: async (slugOrId) => {
     try {
-      console.log(`🔄 Calling: /movies/${slugOrId}/detail`);
       const data = await axiosClient.get(`/movies/${slugOrId}/detail`);
       return {
         success: true,
-        data: data?.data || data, // ← handle cả 2 dạng response
+        data: data?.data || data, // handle cả 2 dạng response
         message: 'Lấy chi tiết phim thành công',
       };
     } catch (error) {
-      console.error('❌ getMovieDetail Error:', error);
       return {
         success: false,
         data: null,
@@ -131,15 +96,16 @@ const movieApi = {
     }
   },
 
-  // getShowtimes
+  
   getShowtimes: async (movieId) => {
     try {
-      console.log(`🔄 Calling: /movies/${movieId}/showtimes`);
       const res = await axiosClient.get(`/movies/${movieId}/showtimes`);
-      console.log('📥 Showtimes Response:', res);
-      return { success: true, data: res, message: 'Lấy lịch chiếu thành công' };
+      return { 
+        success: true, 
+        data: res, 
+        message: 'Lấy lịch chiếu thành công' 
+      };
     } catch (error) {
-      console.error('❌ getShowtimes Error:', error);
       return {
         success: false,
         data: { CinemasByCity: {} },
@@ -147,34 +113,6 @@ const movieApi = {
       };
     }
   },
-  /**
-   * ✅ Lấy lịch chiếu theo phim
-   * Endpoint: GET /movies/{movieId}/showtimes
-   *
-   * API trả về: { MovieId, CinemasByCity: { "THÀNH PHỐ": [...cinemas] } }
-   *
-   * ⚠️ FIX: Bỏ đoạn Array.isArray cũ vì response là object, không phải array.
-   *         Giữ nguyên response.data để ChiTietPhim đọc được CinemasByCity.
-   */
-  // getShowtimes: async (movieId) => {
-  //   try {
-  //     console.log(`🔄 Calling: /movies/${movieId}/showtimes`);
-  //     const response = await axiosClient.get(`/movies/${movieId}/showtimes`);
-  //     console.log("📥 Showtimes Response:", response.data);
-  //     return {
-  //       success: true,
-  //       data: response.data, // { MovieId, CinemasByCity: { "THÀNH PHỐ": [...] } }
-  //       message: "Lấy lịch chiếu thành công",
-  //     };
-  //   } catch (error) {
-  //     console.error("❌ getShowtimes Error:", error);
-  //     return {
-  //       success: false,
-  //       data: { CinemasByCity: {} },
-  //       message: error.response?.data?.message || error.message,
-  //     };
-  //   }
-  // },
 
   /**
    * ✅ Lấy filters phim đang chiếu
